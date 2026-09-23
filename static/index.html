@@ -120,6 +120,61 @@
             margin-top: 16px;
         }
 
+        .progress-block {
+            margin: 2px 0 14px;
+        }
+
+        .progress-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 7px;
+            font-size: 13px;
+            color: #aeb8c8;
+        }
+
+        .progress-track {
+            height: 10px;
+            background: #101218;
+            border: 1px solid #303641;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #c7ced9;
+            transition: width 180ms ease;
+        }
+
+        .progress-fill.active {
+            background-image: linear-gradient(
+                135deg,
+                rgba(255,255,255,0.18) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255,255,255,0.18) 50%,
+                rgba(255,255,255,0.18) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 18px 18px;
+            animation: progress-stripes 700ms linear infinite;
+        }
+
+        @keyframes progress-stripes {
+            from { background-position: 0 0; }
+            to { background-position: 18px 0; }
+        }
+
+        .stage-line {
+            margin-top: 7px;
+            font-size: 12px;
+            color: #8f99aa;
+            min-height: 18px;
+        }
+
         .answer {
             white-space: pre-wrap;
             overflow-wrap: anywhere;
@@ -129,6 +184,10 @@
             border-radius: 10px;
             padding: 14px;
             min-height: 100px;
+        }
+
+        .answer.pending {
+            color: #798394;
         }
 
         .metrics {
@@ -188,6 +247,7 @@
             border: 1px solid #303641;
             border-radius: 10px;
             padding: 12px;
+            margin-top: 8px;
         }
 
         .pole-text {
@@ -227,6 +287,16 @@
             color: #ff9e9e;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            .progress-fill {
+                transition: none;
+            }
+
+            .progress-fill.active {
+                animation: none;
+            }
+        }
+
         @media (max-width: 900px) {
             #comparison,
             .eval-grid {
@@ -239,7 +309,7 @@
 <main>
     <header>
         <h1>CREW</h1>
-        <div class="version">v0.0.2 - comparison test mode</div>
+        <div class="version">v0.0.2 - comparison test mode with live progress</div>
     </header>
 
     <section class="card">
@@ -261,7 +331,23 @@
     <section id="comparison" hidden>
         <article class="card">
             <h2>4x Luna Crew</h2>
-            <div id="crew-answer" class="answer"></div>
+
+            <div class="progress-block">
+                <div class="progress-head">
+                    <span id="crew-progress-label">Waiting</span>
+                    <span id="crew-progress-percent">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="crew-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="crew-stage-line" class="stage-line">
+                    Solver -> Critic -> Improver -> Integrator
+                </div>
+            </div>
+
+            <div id="crew-answer" class="answer pending">
+                Waiting for Crew...
+            </div>
             <div id="crew-metrics" class="metrics"></div>
 
             <h3>Work artifacts</h3>
@@ -270,7 +356,23 @@
 
         <article class="card">
             <h2>1x Luna baseline</h2>
-            <div id="single-answer" class="answer"></div>
+
+            <div class="progress-block">
+                <div class="progress-head">
+                    <span id="single-progress-label">Waiting</span>
+                    <span id="single-progress-percent">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="single-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="single-stage-line" class="stage-line">
+                    Single Luna response
+                </div>
+            </div>
+
+            <div id="single-answer" class="answer pending">
+                Waiting for baseline...
+            </div>
             <div id="single-metrics" class="metrics"></div>
 
             <h3>Work artifact</h3>
@@ -280,47 +382,63 @@
 
     <section id="evaluator" class="card" hidden>
         <h2>Sol independent evaluator</h2>
-        <div id="eval-meta" class="meta"></div>
 
-        <div class="eval-grid">
-            <div>
-                <h3>4x Luna Crew</h3>
-
-                <div class="pole">
-                    <strong>Advocate</strong>
-                    <div id="crew-advocate" class="pole-text"></div>
-                </div>
-
-                <div class="pole">
-                    <strong>Adversary</strong>
-                    <div id="crew-adversary" class="pole-text"></div>
-                </div>
+        <div class="progress-block">
+            <div class="progress-head">
+                <span id="eval-progress-label">Waiting for both candidates</span>
+                <span id="eval-progress-percent">0%</span>
             </div>
-
-            <div>
-                <h3>1x Luna baseline</h3>
-
-                <div class="pole">
-                    <strong>Advocate</strong>
-                    <div id="single-advocate" class="pole-text"></div>
-                </div>
-
-                <div class="pole">
-                    <strong>Adversary</strong>
-                    <div id="single-adversary" class="pole-text"></div>
-                </div>
+            <div class="progress-track">
+                <div id="eval-progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="eval-stage-line" class="stage-line">
+                Blind A/B advocate + adversary + verdict
             </div>
         </div>
 
-        <div id="score-grid" class="score-grid"></div>
+        <div id="eval-content" hidden>
+            <div id="eval-meta" class="meta"></div>
 
-        <div class="verdict">
-            <div id="verdict-main" class="verdict-main"></div>
-            <div id="verdict-text"></div>
-            <div id="verdict-confidence" class="meta"></div>
+            <div class="eval-grid">
+                <div>
+                    <h3>4x Luna Crew</h3>
+
+                    <div class="pole">
+                        <strong>Advocate</strong>
+                        <div id="crew-advocate" class="pole-text"></div>
+                    </div>
+
+                    <div class="pole">
+                        <strong>Adversary</strong>
+                        <div id="crew-adversary" class="pole-text"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3>1x Luna baseline</h3>
+
+                    <div class="pole">
+                        <strong>Advocate</strong>
+                        <div id="single-advocate" class="pole-text"></div>
+                    </div>
+
+                    <div class="pole">
+                        <strong>Adversary</strong>
+                        <div id="single-adversary" class="pole-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="score-grid" class="score-grid"></div>
+
+            <div class="verdict">
+                <div id="verdict-main" class="verdict-main"></div>
+                <div id="verdict-text"></div>
+                <div id="verdict-confidence" class="meta"></div>
+            </div>
+
+            <div id="test-metrics" class="metrics"></div>
         </div>
-
-        <div id="test-metrics" class="metrics"></div>
     </section>
 </main>
 
@@ -333,6 +451,7 @@
 
     const comparison = document.getElementById("comparison");
     const evaluator = document.getElementById("evaluator");
+    const evalContent = document.getElementById("eval-content");
 
     const crewAnswer = document.getElementById("crew-answer");
     const singleAnswer = document.getElementById("single-answer");
@@ -352,6 +471,27 @@
     const verdictConfidence = document.getElementById("verdict-confidence");
     const testMetrics = document.getElementById("test-metrics");
 
+    const progressUi = {
+        crew: {
+            label: document.getElementById("crew-progress-label"),
+            percent: document.getElementById("crew-progress-percent"),
+            fill: document.getElementById("crew-progress-fill"),
+            stage: document.getElementById("crew-stage-line")
+        },
+        single: {
+            label: document.getElementById("single-progress-label"),
+            percent: document.getElementById("single-progress-percent"),
+            fill: document.getElementById("single-progress-fill"),
+            stage: document.getElementById("single-stage-line")
+        },
+        evaluator: {
+            label: document.getElementById("eval-progress-label"),
+            percent: document.getElementById("eval-progress-percent"),
+            fill: document.getElementById("eval-progress-fill"),
+            stage: document.getElementById("eval-stage-line")
+        }
+    };
+
     const scoreNames = [
         "correctness",
         "completeness",
@@ -364,6 +504,47 @@
         runTest.disabled = busy;
         runCrew.disabled = busy;
         runSingle.disabled = busy;
+    }
+
+    function setProgress(side, value, label, stage, active) {
+        const ui = progressUi[side];
+        const percent = Math.max(0, Math.min(100, Math.round(value)));
+
+        ui.fill.style.width = `${percent}%`;
+        ui.percent.textContent = `${percent}%`;
+        ui.label.textContent = label;
+
+        if (stage !== undefined) {
+            ui.stage.textContent = stage;
+        }
+
+        ui.fill.classList.toggle("active", Boolean(active));
+    }
+
+    function resetProgress() {
+        setProgress(
+            "crew",
+            0,
+            "Waiting",
+            "Solver -> Critic -> Improver -> Integrator",
+            false
+        );
+
+        setProgress(
+            "single",
+            0,
+            "Waiting",
+            "Single Luna response",
+            false
+        );
+
+        setProgress(
+            "evaluator",
+            0,
+            "Waiting for both candidates",
+            "Blind A/B advocate + adversary + verdict",
+            false
+        );
     }
 
     function pill(text) {
@@ -407,10 +588,12 @@
 
     function renderBranch(branch, side) {
         if (side === "crew") {
+            crewAnswer.classList.remove("pending");
             crewAnswer.textContent = branch.final_answer;
             renderMetrics(crewMetrics, branch.metrics);
             renderStages(crewStages, branch.stages);
         } else {
+            singleAnswer.classList.remove("pending");
             singleAnswer.textContent = branch.final_answer;
             renderMetrics(singleMetrics, branch.metrics);
             renderStages(singleStages, branch.stages);
@@ -450,6 +633,8 @@
         const crewEval = evaluation.crew_view;
         const singleEval = evaluation.single_view;
 
+        evalContent.hidden = false;
+
         evalMeta.textContent =
             `${evaluation.model} | blind A/B | ${evaluation.latency_ms} ms`;
 
@@ -486,6 +671,98 @@
         );
     }
 
+    function handleProgress(event) {
+        if (event.event === "branch_started") {
+            if (event.branch === "crew") {
+                setProgress(
+                    "crew",
+                    2,
+                    "Started",
+                    "Preparing Solver",
+                    true
+                );
+            } else if (event.branch === "single") {
+                setProgress(
+                    "single",
+                    5,
+                    "Started",
+                    "Preparing single Luna",
+                    true
+                );
+            }
+
+            return;
+        }
+
+        if (event.event === "stage_started") {
+            const base = ((event.index - 1) / event.total) * 100;
+            const nudge = Math.min(8, 100 / event.total / 3);
+
+            setProgress(
+                event.branch,
+                base + nudge,
+                `${event.role} running`,
+                `${event.index}/${event.total} - ${event.role}`,
+                true
+            );
+
+            return;
+        }
+
+        if (event.event === "stage_done") {
+            const done = (event.index / event.total) * 100;
+
+            setProgress(
+                event.branch,
+                done,
+                `${event.role} done`,
+                `${event.index}/${event.total} complete`,
+                false
+            );
+
+            return;
+        }
+
+        if (event.event === "branch_done") {
+            setProgress(
+                event.branch,
+                100,
+                "Done",
+                "Candidate ready",
+                false
+            );
+
+            renderBranch(
+                event.result,
+                event.branch
+            );
+
+            return;
+        }
+
+        if (event.event === "evaluator_started") {
+            setProgress(
+                "evaluator",
+                12,
+                "Sol evaluating",
+                `Model: ${event.model}`,
+                true
+            );
+
+            return;
+        }
+
+        if (event.event === "evaluator_done") {
+            setProgress(
+                "evaluator",
+                100,
+                "Done",
+                `${event.model} | ${event.latency_ms} ms`,
+                false
+            );
+        }
+    }
+
     async function requestJson(url, body) {
         const response = await fetch(url, {
             method: "POST",
@@ -504,6 +781,69 @@
         return data;
     }
 
+    async function consumeNdjson(response, onEvent) {
+        if (!response.body) {
+            throw new Error("Streaming response body is unavailable.");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+            const {value, done} = await reader.read();
+
+            if (done) {
+                buffer += decoder.decode();
+            } else {
+                buffer += decoder.decode(value, {stream: true});
+            }
+
+            while (true) {
+                const newline = buffer.indexOf("\n");
+
+                if (newline < 0) {
+                    break;
+                }
+
+                const line = buffer.slice(0, newline).trim();
+                buffer = buffer.slice(newline + 1);
+
+                if (line) {
+                    onEvent(JSON.parse(line));
+                }
+            }
+
+            if (done) {
+                break;
+            }
+        }
+
+        const tail = buffer.trim();
+
+        if (tail) {
+            onEvent(JSON.parse(tail));
+        }
+    }
+
+    function prepareComparisonUi() {
+        comparison.hidden = false;
+        evaluator.hidden = false;
+        evalContent.hidden = true;
+
+        crewAnswer.classList.add("pending");
+        singleAnswer.classList.add("pending");
+        crewAnswer.textContent = "Waiting for Crew...";
+        singleAnswer.textContent = "Waiting for baseline...";
+
+        crewMetrics.replaceChildren();
+        singleMetrics.replaceChildren();
+        crewStages.replaceChildren();
+        singleStages.replaceChildren();
+
+        resetProgress();
+    }
+
     async function runComparison() {
         const text = message.value.trim();
 
@@ -513,23 +853,69 @@
         }
 
         setBusy(true);
-        comparison.hidden = true;
-        evaluator.hidden = true;
-        status.textContent =
-            "Running 4x Luna and 1x Luna in parallel, then Sol evaluation...";
+        prepareComparisonUi();
+        status.textContent = "Running comparison...";
+
+        let finalData = null;
 
         try {
-            const data = await requestJson(
-                "/api/test",
-                {message: text}
+            const response = await fetch("/api/test-stream", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({message: text})
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.detail || `HTTP ${response.status}`);
+            }
+
+            await consumeNdjson(
+                response,
+                (event) => {
+                    if (event.type === "progress") {
+                        handleProgress(event);
+                    } else if (event.type === "result") {
+                        finalData = event.data;
+                    } else if (event.type === "error") {
+                        throw new Error(event.message);
+                    }
+                }
             );
 
-            renderBranch(data.crew, "crew");
-            renderBranch(data.single, "single");
-            renderEvaluator(data);
+            if (!finalData) {
+                throw new Error("Test stream ended without a final result.");
+            }
 
-            comparison.hidden = false;
-            evaluator.hidden = false;
+            renderBranch(finalData.crew, "crew");
+            renderBranch(finalData.single, "single");
+            renderEvaluator(finalData);
+
+            setProgress(
+                "crew",
+                100,
+                "Done",
+                "Candidate ready",
+                false
+            );
+            setProgress(
+                "single",
+                100,
+                "Done",
+                "Candidate ready",
+                false
+            );
+            setProgress(
+                "evaluator",
+                100,
+                "Done",
+                `${finalData.evaluation.model} | ` +
+                `${finalData.evaluation.latency_ms} ms`,
+                false
+            );
+
             status.textContent = "Done";
         } catch (error) {
             status.textContent = `Failed: ${error.message}`;
@@ -562,14 +948,8 @@
 
             if (mode === "crew") {
                 renderBranch(data, "crew");
-                singleAnswer.textContent = "";
-                singleMetrics.replaceChildren();
-                singleStages.replaceChildren();
             } else {
                 renderBranch(data, "single");
-                crewAnswer.textContent = "";
-                crewMetrics.replaceChildren();
-                crewStages.replaceChildren();
             }
 
             status.textContent = "Done";

@@ -1,8 +1,10 @@
+import asyncio
+import json
 from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from crew_workflow import run_crew, run_single
@@ -11,7 +13,7 @@ from evaluator import run_test
 ROOT = Path(__file__).resolve().parent
 INDEX_HTML = ROOT / "static" / "index.html"
 
-app = FastAPI(title="CREW", version="0.0.2-test")
+app = FastAPI(title="CREW", version="0.0.2-test-progress")
 
 
 class RunRequest(BaseModel):
@@ -32,7 +34,7 @@ async def index() -> FileResponse:
 async def health() -> dict[str, str]:
     return {
         "status": "ok",
-        "version": "0.0.2-test",
+        "version": "0.0.2-test-progress",
     }
 
 
@@ -89,3 +91,82 @@ async def test(request: TestRequest) -> dict:
             status_code=502,
             detail=f"CREW test failed: {exc}",
         ) from exc
+
+
+@app.post("/api/test-stream")
+async def test_stream(request: TestRequest) -> StreamingResponse:
+    message = request.message.strip()
+
+    if not message:
+        raise HTTPException(
+            status_code=400,
+            detail="Message is empty.",
+        )
+
+    async def stream():
+        queue: asyncio.Queue[dict] = asyncio.Queue()
+
+        async def progress(event: dict) -> None:
+            await queue.put(
+                {
+                    "type": "progress",
+                    **event,
+                }
+            )
+
+        async def runner() -> None:
+            try:
+                result = await run_test(
+                    message,
+                    progress=progress,
+                )
+
+                await queue.put(
+                    {
+                        "type": "result",
+                        "data": result,
+                    }
+                )
+
+            except Exception as exc:
+                await queue.put(
+                    {
+                        "type": "error",
+                        "message": str(exc),
+                    }
+                )
+
+        task = asyncio.create_task(runner())
+
+        try:
+            while True:
+                event = await queue.get()
+
+                yield (
+                    json.dumps(
+                        event,
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
+                if event["type"] in {"result", "error"}:
+                    break
+
+        finally:
+            if not task.done():
+                task.cancel()
+
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+    return StreamingResponse(
+        stream(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

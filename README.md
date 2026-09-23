@@ -4,7 +4,7 @@ Local experimental application for orchestrating multiple LLM agents.
 
 ## Current version
 
-CREW v0.0.2 - fixed four-agent Crew with comparison Test Mode.
+CREW v0.0.2 - fixed four-agent Crew with comparison Test Mode and live stage progress.
 
 ## Models
 
@@ -49,11 +49,28 @@ User task ---------------+                                                +-> So
                          +-> 1x Luna baseline -----------------------------+
 ```
 
-The two solution branches run concurrently.
+The 4x Luna branch and 1x Luna baseline run concurrently.
 
-The Sol evaluator receives only anonymous Candidate A and Candidate B in
-randomized order. It does not receive the internal Crew trace and is not told
-which candidate came from the four-agent workflow.
+The browser receives real progress events from the backend:
+
+```text
+4x Luna:
+Solver -> Critic -> Improver -> Integrator
+
+1x Luna:
+Single -> done
+
+Sol:
+waiting -> evaluating -> done
+```
+
+The progress bars reflect actual stage transitions, not estimated elapsed time.
+
+The Sol evaluator receives anonymous Candidate A and Candidate B in randomized
+order. It does not receive the internal Crew trace and is not told which
+candidate came from the four-agent workflow.
+
+## Evaluator output
 
 The evaluator produces:
 
@@ -98,13 +115,13 @@ v0.0.2 still does not have:
 - database storage;
 - long-term memory;
 - autonomous routing;
-- live per-stage streaming.
+- token-by-token response streaming.
 
 ## Roadmap
 
 - v0.0.0 - project skeleton
 - v0.0.1 - first OpenAI API response in browser
-- v0.0.2 - fixed 4-agent Crew + comparison Test Mode
+- v0.0.2 - fixed 4-agent Crew + comparison Test Mode + live progress
 - v0.0.3 - configurable agents, roles and models
 
 ## Security

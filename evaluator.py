@@ -4,6 +4,8 @@ import time
 from typing import Any
 
 from crew_workflow import (
+    ProgressCallback,
+    emit_progress,
     new_run_id,
     run_crew,
     run_single,
@@ -144,6 +146,8 @@ async def evaluate_candidates(
     task: str,
     crew_answer: str,
     single_answer: str,
+    *,
+    progress: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     candidates = [
         ("crew", crew_answer),
@@ -165,6 +169,14 @@ async def evaluate_candidates(
 
     model = get_evaluator_model()
 
+    await emit_progress(
+        progress,
+        {
+            "event": "evaluator_started",
+            "model": model,
+        },
+    )
+
     result = await ask_model_json(
         prompt,
         model=model,
@@ -181,7 +193,7 @@ async def evaluate_candidates(
     else:
         preferred_side = mapping[preferred_blind]
 
-    return {
+    payload = {
         "model": result["model"],
         "latency_ms": result["latency_ms"],
         "usage": result["usage"],
@@ -196,6 +208,17 @@ async def evaluate_candidates(
         "candidate_b": evaluation["candidate_b"],
     }
 
+    await emit_progress(
+        progress,
+        {
+            "event": "evaluator_done",
+            "model": payload["model"],
+            "latency_ms": payload["latency_ms"],
+        },
+    )
+
+    return payload
+
 
 def _evaluation_by_side(
     evaluation: dict[str, Any],
@@ -209,15 +232,35 @@ def _evaluation_by_side(
     return evaluation["candidate_b"]
 
 
-async def run_test(task: str) -> dict[str, Any]:
+async def run_test(
+    task: str,
+    *,
+    progress: ProgressCallback | None = None,
+) -> dict[str, Any]:
     run_id = new_run_id()
     total_started = time.perf_counter()
+
+    await emit_progress(
+        progress,
+        {
+            "event": "test_started",
+            "run_id": run_id,
+        },
+    )
 
     solution_started = time.perf_counter()
 
     crew, single = await asyncio.gather(
-        run_crew(task, persist=False),
-        run_single(task, persist=False),
+        run_crew(
+            task,
+            persist=False,
+            progress=progress,
+        ),
+        run_single(
+            task,
+            persist=False,
+            progress=progress,
+        ),
     )
 
     parallel_solution_ms = round(
@@ -228,6 +271,7 @@ async def run_test(task: str) -> dict[str, Any]:
         task,
         crew["final_answer"],
         single["final_answer"],
+        progress=progress,
     )
 
     total_wall_ms = round(
@@ -283,5 +327,13 @@ async def run_test(task: str) -> dict[str, Any]:
     }
 
     payload["run_file"] = save_run(payload)
+
+    await emit_progress(
+        progress,
+        {
+            "event": "test_done",
+            "run_id": run_id,
+        },
+    )
 
     return payload

@@ -1,4 +1,6 @@
+import inspect
 import json
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -9,6 +11,8 @@ ROOT = Path(__file__).resolve().parent
 RUNS_DIR = ROOT / "runs"
 
 ROLES = ("Solver", "Critic", "Improver", "Integrator")
+
+ProgressCallback = Callable[[dict[str, Any]], Awaitable[None] | None]
 
 SOLVER_PROMPT = """\
 You are the Solver in a fixed four-agent CREW.
@@ -151,6 +155,19 @@ USER TASK:
 """
 
 
+async def emit_progress(
+    progress: ProgressCallback | None,
+    event: dict[str, Any],
+) -> None:
+    if progress is None:
+        return
+
+    result = progress(event)
+
+    if inspect.isawaitable(result):
+        await result
+
+
 def new_run_id() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 
@@ -195,22 +212,74 @@ def summarize_stages(stages: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
-async def _stage(role: str, prompt: str) -> dict[str, Any]:
+async def _stage(
+    role: str,
+    prompt: str,
+    *,
+    branch: str,
+    index: int,
+    total: int,
+    progress: ProgressCallback | None,
+) -> dict[str, Any]:
+    await emit_progress(
+        progress,
+        {
+            "event": "stage_started",
+            "branch": branch,
+            "role": role,
+            "index": index,
+            "total": total,
+        },
+    )
+
     result = await ask_model(prompt)
 
-    return {
+    stage = {
         "role": role,
         **result,
     }
+
+    await emit_progress(
+        progress,
+        {
+            "event": "stage_done",
+            "branch": branch,
+            "role": role,
+            "index": index,
+            "total": total,
+            "latency_ms": stage["latency_ms"],
+        },
+    )
+
+    return stage
 
 
 async def run_single(
     task: str,
     *,
     persist: bool = True,
+    progress: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     run_id = new_run_id()
-    stage = await _stage("Single", SINGLE_PROMPT.format(task=task))
+
+    await emit_progress(
+        progress,
+        {
+            "event": "branch_started",
+            "branch": "single",
+            "total": 1,
+        },
+    )
+
+    stage = await _stage(
+        "Single",
+        SINGLE_PROMPT.format(task=task),
+        branch="single",
+        index=1,
+        total=1,
+        progress=progress,
+    )
+
     stages = [stage]
 
     payload = {
@@ -227,6 +296,15 @@ async def run_single(
     else:
         payload["run_file"] = ""
 
+    await emit_progress(
+        progress,
+        {
+            "event": "branch_done",
+            "branch": "single",
+            "result": payload,
+        },
+    )
+
     return payload
 
 
@@ -234,12 +312,26 @@ async def run_crew(
     task: str,
     *,
     persist: bool = True,
+    progress: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     run_id = new_run_id()
+
+    await emit_progress(
+        progress,
+        {
+            "event": "branch_started",
+            "branch": "crew",
+            "total": 4,
+        },
+    )
 
     solver = await _stage(
         "Solver",
         SOLVER_PROMPT.format(task=task),
+        branch="crew",
+        index=1,
+        total=4,
+        progress=progress,
     )
 
     critic = await _stage(
@@ -248,6 +340,10 @@ async def run_crew(
             task=task,
             solver=solver["text"],
         ),
+        branch="crew",
+        index=2,
+        total=4,
+        progress=progress,
     )
 
     improver = await _stage(
@@ -257,6 +353,10 @@ async def run_crew(
             solver=solver["text"],
             critic=critic["text"],
         ),
+        branch="crew",
+        index=3,
+        total=4,
+        progress=progress,
     )
 
     integrator = await _stage(
@@ -267,6 +367,10 @@ async def run_crew(
             critic=critic["text"],
             improver=improver["text"],
         ),
+        branch="crew",
+        index=4,
+        total=4,
+        progress=progress,
     )
 
     stages = [solver, critic, improver, integrator]
@@ -285,5 +389,14 @@ async def run_crew(
         payload["run_file"] = save_run(payload)
     else:
         payload["run_file"] = ""
+
+    await emit_progress(
+        progress,
+        {
+            "event": "branch_done",
+            "branch": "crew",
+            "result": payload,
+        },
+    )
 
     return payload
