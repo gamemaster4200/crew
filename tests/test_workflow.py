@@ -8,8 +8,15 @@ def fake_result(text: str) -> dict:
     return {
         "text": text,
         "model": "gpt-5.6-luna",
-        "latency_ms": 1,
-        "usage": None,
+        "latency_ms": 10,
+        "usage": {
+            "input_tokens": 100,
+            "output_tokens": 50,
+            "total_tokens": 150,
+            "output_tokens_details": {
+                "reasoning_tokens": 5,
+            },
+        },
     }
 
 
@@ -19,14 +26,15 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             "crew_workflow.ask_model",
             new=AsyncMock(return_value=fake_result("single answer")),
         ) as mocked, patch(
-            "crew_workflow._save_run",
+            "crew_workflow.save_run",
             return_value="runs/fake.json",
         ):
             result = await crew_workflow.run_single("task")
 
         self.assertEqual(result["mode"], "single")
         self.assertEqual(result["final_answer"], "single answer")
-        self.assertEqual([s["role"] for s in result["stages"]], ["Single"])
+        self.assertEqual(result["metrics"]["calls"], 1)
+        self.assertEqual(result["metrics"]["input_tokens"], 100)
         self.assertEqual(mocked.await_count, 1)
 
     async def test_crew_calls_four_roles_in_order(self):
@@ -41,7 +49,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             "crew_workflow.ask_model",
             new=AsyncMock(side_effect=responses),
         ) as mocked, patch(
-            "crew_workflow._save_run",
+            "crew_workflow.save_run",
             return_value="runs/fake.json",
         ):
             result = await crew_workflow.run_crew("task")
@@ -52,6 +60,8 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             ["Solver", "Critic", "Improver", "Integrator"],
         )
         self.assertEqual(result["final_answer"], "integrator answer")
+        self.assertEqual(result["metrics"]["calls"], 4)
+        self.assertEqual(result["metrics"]["input_tokens"], 400)
         self.assertEqual(mocked.await_count, 4)
 
 

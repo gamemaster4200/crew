@@ -16,9 +16,16 @@ if (-not (Test-Path -LiteralPath $EnvFile)) {
 }
 
 $EnvText = [System.IO.File]::ReadAllText($EnvFile)
-$KeyLine = ($EnvText -split "`r?`n" | Where-Object { $_ -match '^OPENAI_API_KEY=' } | Select-Object -First 1)
+$KeyLine = (
+    $EnvText -split "`r?`n" |
+    Where-Object { $_ -match '^OPENAI_API_KEY=' } |
+    Select-Object -First 1
+)
 
-if ([string]::IsNullOrWhiteSpace($KeyLine) -or $KeyLine -eq "OPENAI_API_KEY=") {
+if (
+    [string]::IsNullOrWhiteSpace($KeyLine) -or
+    $KeyLine -eq "OPENAI_API_KEY="
+) {
     Write-Host ""
     Write-Host "OPENAI_API_KEY is empty." -ForegroundColor Yellow
     Write-Host "Edit:"
@@ -29,7 +36,9 @@ if ([string]::IsNullOrWhiteSpace($KeyLine) -or $KeyLine -eq "OPENAI_API_KEY=") {
 }
 
 Write-Host ""
-Write-Host "CREW v0.0.2" -ForegroundColor Cyan
+Write-Host "CREW v0.0.2 Test Mode" -ForegroundColor Cyan
+Write-Host "Luna: gpt-5.6-luna"
+Write-Host "Evaluator default: gpt-5.6-sol"
 Write-Host "http://127.0.0.1:8000"
 Write-Host "Ctrl+C to stop"
 Write-Host ""

@@ -4,18 +4,30 @@ Local experimental application for orchestrating multiple LLM agents.
 
 ## Current version
 
-CREW v0.0.2 - first real fixed Crew.
+CREW v0.0.2 - fixed four-agent Crew with comparison Test Mode.
 
-## Run
+## Models
 
-Put the CREW project API key into the local `.env`:
+Default worker model:
 
 ```text
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5.6-luna
+gpt-5.6-luna
 ```
 
-Start:
+Default independent evaluator:
+
+```text
+gpt-5.6-sol
+```
+
+Optional local override in `.env`:
+
+```text
+OPENAI_MODEL=gpt-5.6-luna
+OPENAI_EVALUATOR_MODEL=gpt-5.6-sol
+```
+
+## Run
 
 ```powershell
 .\start-crew.ps1
@@ -27,26 +39,45 @@ Open:
 http://127.0.0.1:8000
 ```
 
-## v0.0.2 workflow
+## Test Mode
+
+One user task is solved by two independent branches:
 
 ```text
-User task
-   |
-Solver
-   |
-Critic
-   |
-Improver
-   |
-Integrator
-   |
-Final answer
+                         +-> Solver -> Critic -> Improver -> Integrator --+
+User task ---------------+                                                +-> Sol evaluator
+                         +-> 1x Luna baseline -----------------------------+
 ```
 
-All four roles use the same configured model. The default is `gpt-5.6-luna`.
+The two solution branches run concurrently.
 
-The UI also exposes a `1x Luna baseline` button so the same task can be
-compared against the four-agent workflow.
+The Sol evaluator receives only anonymous Candidate A and Candidate B in
+randomized order. It does not receive the internal Crew trace and is not told
+which candidate came from the four-agent workflow.
+
+The evaluator produces:
+
+- a concise advocate case for each candidate;
+- a concise adversarial case against each candidate;
+- 0-10 scores for correctness, completeness, robustness, relevance, and
+  actionability;
+- A, B, or TIE preference;
+- confidence;
+- a short verdict.
+
+## Metrics
+
+The UI shows:
+
+- API call count;
+- input tokens;
+- output tokens;
+- reasoning tokens when reported by the API;
+- total tokens;
+- latency;
+- total Test Mode wall time.
+
+## Run artifacts
 
 Each run is saved locally as UTF-8 JSON under:
 
@@ -54,28 +85,26 @@ Each run is saved locally as UTF-8 JSON under:
 runs/
 ```
 
-The `runs/` directory is ignored by Git.
+`runs/` is ignored by Git.
 
 ## Deliberate limitations
 
-v0.0.2 does not yet have:
+v0.0.2 still does not have:
 
 - configurable roles;
-- configurable per-agent models;
-- parallel execution;
+- configurable per-agent models in the UI;
+- parallel agents inside the four-agent Crew;
 - tools;
 - database storage;
 - long-term memory;
 - autonomous routing;
 - live per-stage streaming.
 
-Those belong to later experiments.
-
 ## Roadmap
 
 - v0.0.0 - project skeleton
 - v0.0.1 - first OpenAI API response in browser
-- v0.0.2 - fixed 4-agent Crew
+- v0.0.2 - fixed 4-agent Crew + comparison Test Mode
 - v0.0.3 - configurable agents, roles and models
 
 ## Security

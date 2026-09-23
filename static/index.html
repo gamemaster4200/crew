@@ -3,39 +3,69 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CREW v0.0.2</title>
+    <title>CREW v0.0.2 Test Mode</title>
     <style>
         :root {
             font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color-scheme: dark;
-            background: #111318;
-            color: #e8eaf0;
+            background: #0f1116;
+            color: #edf0f6;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 24px;
+            padding: 22px;
         }
 
         main {
-            width: min(980px, 100%);
+            width: min(1500px, 100%);
             margin: 0 auto;
-            background: #191c23;
-            border: 1px solid #2d323d;
-            border-radius: 16px;
-            padding: 28px;
-            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
         }
 
-        h1 { margin: 0 0 4px; font-size: 30px; }
-        .version { color: #97a0b0; margin-bottom: 22px; }
+        .card {
+            background: #191c23;
+            border: 1px solid #303641;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        h3 {
+            margin: 16px 0 8px;
+            font-size: 15px;
+        }
+
+        .version,
+        .muted,
+        .meta {
+            color: #99a3b4;
+        }
+
+        .version {
+            margin-top: 4px;
+        }
 
         textarea {
             width: 100%;
-            min-height: 150px;
+            min-height: 130px;
             resize: vertical;
             padding: 14px;
             border-radius: 10px;
@@ -46,7 +76,9 @@
             outline: none;
         }
 
-        textarea:focus { border-color: #737f95; }
+        textarea:focus {
+            border-color: #76849c;
+        }
 
         .actions {
             display: flex;
@@ -63,13 +95,13 @@
             font: inherit;
             font-weight: 700;
             cursor: pointer;
-            background: #e8eaf0;
+            background: #edf0f6;
             color: #15171c;
         }
 
         button.secondary {
             background: #343a46;
-            color: #e8eaf0;
+            color: #edf0f6;
         }
 
         button:disabled {
@@ -77,39 +109,50 @@
             cursor: wait;
         }
 
-        #status { color: #97a0b0; }
-
-        #result {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid #2d323d;
+        #status {
+            color: #aab4c5;
         }
 
-        #final-answer {
-            white-space: pre-wrap;
-            line-height: 1.55;
-            padding: 16px;
-            background: #101218;
-            border: 1px solid #2d323d;
-            border-radius: 10px;
-        }
-
-        #run-meta {
-            margin: 12px 0 18px;
-            font-size: 13px;
-            color: #97a0b0;
-        }
-
-        #stages {
+        #comparison {
             display: grid;
-            gap: 10px;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .answer {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            line-height: 1.5;
+            background: #101218;
+            border: 1px solid #2e3440;
+            border-radius: 10px;
+            padding: 14px;
+            min-height: 100px;
+        }
+
+        .metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin: 12px 0;
+        }
+
+        .pill {
+            border: 1px solid #3a414e;
+            border-radius: 999px;
+            padding: 5px 9px;
+            font-size: 12px;
+            color: #bdc6d5;
+            background: #14171d;
         }
 
         details {
-            border: 1px solid #2d323d;
-            border-radius: 10px;
+            border: 1px solid #303641;
+            border-radius: 9px;
             background: #14171d;
-            padding: 10px 12px;
+            padding: 9px 11px;
+            margin-top: 8px;
         }
 
         summary {
@@ -122,76 +165,346 @@
             overflow-wrap: anywhere;
             font-family: inherit;
             line-height: 1.45;
-            margin: 12px 0 4px;
+            margin: 10px 0 4px;
         }
 
         .stage-meta {
-            color: #97a0b0;
+            color: #929cad;
             font-size: 12px;
-            margin-top: 8px;
         }
 
-        .error { color: #ff9e9e; }
+        #evaluator {
+            margin-top: 16px;
+        }
+
+        .eval-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .pole {
+            background: #11141a;
+            border: 1px solid #303641;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .pole-text {
+            white-space: pre-wrap;
+            line-height: 1.45;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: minmax(120px, 1fr) 80px 80px;
+            gap: 6px 12px;
+            align-items: center;
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        .score-head {
+            color: #9da7b7;
+            font-weight: 700;
+        }
+
+        .verdict {
+            margin-top: 18px;
+            padding: 14px;
+            border: 1px solid #4b5566;
+            border-radius: 10px;
+            background: #101218;
+        }
+
+        .verdict-main {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 7px;
+        }
+
+        .error {
+            color: #ff9e9e;
+        }
+
+        @media (max-width: 900px) {
+            #comparison,
+            .eval-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
 <main>
-    <h1>CREW</h1>
-    <div class="version">v0.0.2 - fixed four-agent crew</div>
+    <header>
+        <h1>CREW</h1>
+        <div class="version">v0.0.2 - comparison test mode</div>
+    </header>
 
-    <textarea
-        id="message"
-        placeholder="&#1042;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1079;&#1072;&#1076;&#1072;&#1095;&#1091;..."
-        autofocus
-    ></textarea>
+    <section class="card">
+        <h2>User task</h2>
+        <textarea
+            id="message"
+            placeholder="&#1042;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1079;&#1072;&#1076;&#1072;&#1095;&#1091;..."
+            autofocus
+        ></textarea>
 
-    <div class="actions">
-        <button id="run-crew" type="button">Run 4-agent Crew</button>
-        <button id="run-single" class="secondary" type="button">Run 1x Luna baseline</button>
-        <span id="status">Ready</span>
-    </div>
+        <div class="actions">
+            <button id="run-test" type="button">Run comparison test</button>
+            <button id="run-crew" class="secondary" type="button">4x Luna only</button>
+            <button id="run-single" class="secondary" type="button">1x Luna only</button>
+            <span id="status">Ready</span>
+        </div>
+    </section>
 
-    <section id="result" hidden>
-        <h2>Final answer</h2>
-        <div id="final-answer"></div>
-        <div id="run-meta"></div>
+    <section id="comparison" hidden>
+        <article class="card">
+            <h2>4x Luna Crew</h2>
+            <div id="crew-answer" class="answer"></div>
+            <div id="crew-metrics" class="metrics"></div>
 
-        <h2>Stages</h2>
-        <div id="stages"></div>
+            <h3>Work artifacts</h3>
+            <div id="crew-stages"></div>
+        </article>
+
+        <article class="card">
+            <h2>1x Luna baseline</h2>
+            <div id="single-answer" class="answer"></div>
+            <div id="single-metrics" class="metrics"></div>
+
+            <h3>Work artifact</h3>
+            <div id="single-stages"></div>
+        </article>
+    </section>
+
+    <section id="evaluator" class="card" hidden>
+        <h2>Sol independent evaluator</h2>
+        <div id="eval-meta" class="meta"></div>
+
+        <div class="eval-grid">
+            <div>
+                <h3>4x Luna Crew</h3>
+
+                <div class="pole">
+                    <strong>Advocate</strong>
+                    <div id="crew-advocate" class="pole-text"></div>
+                </div>
+
+                <div class="pole">
+                    <strong>Adversary</strong>
+                    <div id="crew-adversary" class="pole-text"></div>
+                </div>
+            </div>
+
+            <div>
+                <h3>1x Luna baseline</h3>
+
+                <div class="pole">
+                    <strong>Advocate</strong>
+                    <div id="single-advocate" class="pole-text"></div>
+                </div>
+
+                <div class="pole">
+                    <strong>Adversary</strong>
+                    <div id="single-adversary" class="pole-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="score-grid" class="score-grid"></div>
+
+        <div class="verdict">
+            <div id="verdict-main" class="verdict-main"></div>
+            <div id="verdict-text"></div>
+            <div id="verdict-confidence" class="meta"></div>
+        </div>
+
+        <div id="test-metrics" class="metrics"></div>
     </section>
 </main>
 
 <script>
     const message = document.getElementById("message");
+    const runTest = document.getElementById("run-test");
     const runCrew = document.getElementById("run-crew");
     const runSingle = document.getElementById("run-single");
     const status = document.getElementById("status");
-    const result = document.getElementById("result");
-    const finalAnswer = document.getElementById("final-answer");
-    const runMeta = document.getElementById("run-meta");
-    const stages = document.getElementById("stages");
+
+    const comparison = document.getElementById("comparison");
+    const evaluator = document.getElementById("evaluator");
+
+    const crewAnswer = document.getElementById("crew-answer");
+    const singleAnswer = document.getElementById("single-answer");
+    const crewMetrics = document.getElementById("crew-metrics");
+    const singleMetrics = document.getElementById("single-metrics");
+    const crewStages = document.getElementById("crew-stages");
+    const singleStages = document.getElementById("single-stages");
+
+    const evalMeta = document.getElementById("eval-meta");
+    const crewAdvocate = document.getElementById("crew-advocate");
+    const crewAdversary = document.getElementById("crew-adversary");
+    const singleAdvocate = document.getElementById("single-advocate");
+    const singleAdversary = document.getElementById("single-adversary");
+    const scoreGrid = document.getElementById("score-grid");
+    const verdictMain = document.getElementById("verdict-main");
+    const verdictText = document.getElementById("verdict-text");
+    const verdictConfidence = document.getElementById("verdict-confidence");
+    const testMetrics = document.getElementById("test-metrics");
+
+    const scoreNames = [
+        "correctness",
+        "completeness",
+        "robustness",
+        "relevance",
+        "actionability"
+    ];
 
     function setBusy(busy) {
+        runTest.disabled = busy;
         runCrew.disabled = busy;
         runSingle.disabled = busy;
     }
 
-    function renderStage(stage) {
-        const details = document.createElement("details");
-        const summary = document.createElement("summary");
-        const pre = document.createElement("pre");
-        const meta = document.createElement("div");
-
-        summary.textContent = `${stage.role} - DONE`;
-        pre.textContent = stage.text;
-        meta.className = "stage-meta";
-        meta.textContent = `${stage.model} | ${stage.latency_ms} ms`;
-
-        details.append(summary, pre, meta);
-        stages.appendChild(details);
+    function pill(text) {
+        const span = document.createElement("span");
+        span.className = "pill";
+        span.textContent = text;
+        return span;
     }
 
-    async function run(mode) {
+    function renderMetrics(target, metrics) {
+        target.replaceChildren();
+
+        target.append(
+            pill(`calls ${metrics.calls}`),
+            pill(`latency ${metrics.latency_ms} ms`),
+            pill(`input ${metrics.input_tokens}`),
+            pill(`output ${metrics.output_tokens}`),
+            pill(`reasoning ${metrics.reasoning_tokens}`),
+            pill(`tokens ${metrics.total_tokens}`)
+        );
+    }
+
+    function renderStages(target, stages) {
+        target.replaceChildren();
+
+        for (const stage of stages) {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            const pre = document.createElement("pre");
+            const meta = document.createElement("div");
+
+            summary.textContent = `${stage.role} - DONE`;
+            pre.textContent = stage.text;
+            meta.className = "stage-meta";
+            meta.textContent = `${stage.model} | ${stage.latency_ms} ms`;
+
+            details.append(summary, pre, meta);
+            target.appendChild(details);
+        }
+    }
+
+    function renderBranch(branch, side) {
+        if (side === "crew") {
+            crewAnswer.textContent = branch.final_answer;
+            renderMetrics(crewMetrics, branch.metrics);
+            renderStages(crewStages, branch.stages);
+        } else {
+            singleAnswer.textContent = branch.final_answer;
+            renderMetrics(singleMetrics, branch.metrics);
+            renderStages(singleStages, branch.stages);
+        }
+    }
+
+    function renderScores(crewEval, singleEval) {
+        scoreGrid.replaceChildren();
+
+        const blank = document.createElement("div");
+        const crewHead = document.createElement("div");
+        const singleHead = document.createElement("div");
+
+        crewHead.className = "score-head";
+        singleHead.className = "score-head";
+
+        crewHead.textContent = "4x";
+        singleHead.textContent = "1x";
+
+        scoreGrid.append(blank, crewHead, singleHead);
+
+        for (const name of scoreNames) {
+            const label = document.createElement("div");
+            const crewValue = document.createElement("div");
+            const singleValue = document.createElement("div");
+
+            label.textContent = name;
+            crewValue.textContent = `${crewEval.scores[name]}/10`;
+            singleValue.textContent = `${singleEval.scores[name]}/10`;
+
+            scoreGrid.append(label, crewValue, singleValue);
+        }
+    }
+
+    function renderEvaluator(data) {
+        const evaluation = data.evaluation;
+        const crewEval = evaluation.crew_view;
+        const singleEval = evaluation.single_view;
+
+        evalMeta.textContent =
+            `${evaluation.model} | blind A/B | ${evaluation.latency_ms} ms`;
+
+        crewAdvocate.textContent = crewEval.advocate;
+        crewAdversary.textContent = crewEval.adversary;
+        singleAdvocate.textContent = singleEval.advocate;
+        singleAdversary.textContent = singleEval.adversary;
+
+        renderScores(crewEval, singleEval);
+
+        verdictMain.textContent =
+            `Preferred: ${evaluation.preferred_label}`;
+
+        verdictText.textContent = evaluation.verdict;
+
+        verdictConfidence.textContent =
+            `confidence=${evaluation.confidence} | ` +
+            `blind preferred=${evaluation.preferred_blind} | ` +
+            `A=${evaluation.blind_mapping.A}, B=${evaluation.blind_mapping.B}`;
+
+        testMetrics.replaceChildren();
+
+        const m = data.test_metrics;
+
+        testMetrics.append(
+            pill(`total calls ${m.total_calls}`),
+            pill(`solution phase ${m.parallel_solution_ms} ms`),
+            pill(`Sol ${m.evaluator_ms} ms`),
+            pill(`wall ${m.total_wall_ms} ms`),
+            pill(`input ${m.total_input_tokens}`),
+            pill(`output ${m.total_output_tokens}`),
+            pill(`reasoning ${m.total_reasoning_tokens}`),
+            pill(`tokens ${m.total_tokens}`)
+        );
+    }
+
+    async function requestJson(url, body) {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || `HTTP ${response.status}`);
+        }
+
+        return data;
+    }
+
+    async function runComparison() {
         const text = message.value.trim();
 
         if (!text) {
@@ -200,57 +513,76 @@
         }
 
         setBusy(true);
-        result.hidden = true;
-        stages.replaceChildren();
-        finalAnswer.classList.remove("error");
-        finalAnswer.textContent = "";
-
+        comparison.hidden = true;
+        evaluator.hidden = true;
         status.textContent =
-            mode === "crew"
-                ? "Running Solver -> Critic -> Improver -> Integrator..."
-                : "Running single-agent baseline...";
+            "Running 4x Luna and 1x Luna in parallel, then Sol evaluation...";
 
         try {
-            const response = await fetch("/api/run", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    message: text,
-                    mode: mode
-                })
-            });
+            const data = await requestJson(
+                "/api/test",
+                {message: text}
+            );
 
-            const data = await response.json();
+            renderBranch(data.crew, "crew");
+            renderBranch(data.single, "single");
+            renderEvaluator(data);
 
-            if (!response.ok) {
-                throw new Error(data.detail || `HTTP ${response.status}`);
-            }
-
-            finalAnswer.textContent = data.final_answer;
-            runMeta.textContent =
-                `mode=${data.mode} | run=${data.run_id} | saved=${data.run_file}`;
-
-            for (const stage of data.stages) {
-                renderStage(stage);
-            }
-
-            result.hidden = false;
+            comparison.hidden = false;
+            evaluator.hidden = false;
             status.textContent = "Done";
         } catch (error) {
-            finalAnswer.classList.add("error");
-            finalAnswer.textContent = error.message;
-            runMeta.textContent = "";
-            result.hidden = false;
-            status.textContent = "Failed";
+            status.textContent = `Failed: ${error.message}`;
         } finally {
             setBusy(false);
         }
     }
 
-    runCrew.addEventListener("click", () => run("crew"));
-    runSingle.addEventListener("click", () => run("single"));
+    async function runOnly(mode) {
+        const text = message.value.trim();
+
+        if (!text) {
+            status.textContent = "Enter a task first.";
+            return;
+        }
+
+        setBusy(true);
+        comparison.hidden = false;
+        evaluator.hidden = true;
+        status.textContent = `Running ${mode}...`;
+
+        try {
+            const data = await requestJson(
+                "/api/run",
+                {
+                    message: text,
+                    mode: mode
+                }
+            );
+
+            if (mode === "crew") {
+                renderBranch(data, "crew");
+                singleAnswer.textContent = "";
+                singleMetrics.replaceChildren();
+                singleStages.replaceChildren();
+            } else {
+                renderBranch(data, "single");
+                crewAnswer.textContent = "";
+                crewMetrics.replaceChildren();
+                crewStages.replaceChildren();
+            }
+
+            status.textContent = "Done";
+        } catch (error) {
+            status.textContent = `Failed: ${error.message}`;
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    runTest.addEventListener("click", runComparison);
+    runCrew.addEventListener("click", () => runOnly("crew"));
+    runSingle.addEventListener("click", () => runOnly("single"));
 </script>
 </body>
 </html>
