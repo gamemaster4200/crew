@@ -4,51 +4,79 @@ Local experimental application for orchestrating multiple LLM agents.
 
 ## Current version
 
-CREW v0.0.1 вЂ” first OpenAI API response in the browser.
+CREW v0.0.2 - first real fixed Crew.
 
 ## Run
 
-1. Put the CREW project API key into the local `.env`:
+Put the CREW project API key into the local `.env`:
 
 ```text
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5.6-luna
 ```
 
-2. Start CREW:
+Start:
 
 ```powershell
 .\start-crew.ps1
 ```
 
-3. Open:
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-## v0.0.1 architecture
+## v0.0.2 workflow
 
 ```text
-Browser
-  в†“
-FastAPI localhost
-  в†“
-OpenAI Responses API
-  в†“
-GPT-5.6 Luna
-  в†“
-Browser
+User task
+   |
+Solver
+   |
+Critic
+   |
+Improver
+   |
+Integrator
+   |
+Final answer
 ```
 
-There is deliberately no multi-agent workflow yet.
+All four roles use the same configured model. The default is `gpt-5.6-luna`.
+
+The UI also exposes a `1x Luna baseline` button so the same task can be
+compared against the four-agent workflow.
+
+Each run is saved locally as UTF-8 JSON under:
+
+```text
+runs/
+```
+
+The `runs/` directory is ignored by Git.
+
+## Deliberate limitations
+
+v0.0.2 does not yet have:
+
+- configurable roles;
+- configurable per-agent models;
+- parallel execution;
+- tools;
+- database storage;
+- long-term memory;
+- autonomous routing;
+- live per-stage streaming.
+
+Those belong to later experiments.
 
 ## Roadmap
 
-- v0.0.0 вЂ” project skeleton
-- v0.0.1 вЂ” first OpenAI API response in browser
-- v0.0.2 вЂ” fixed 4-agent Crew
-- v0.0.3 вЂ” configurable agents, roles and models
+- v0.0.0 - project skeleton
+- v0.0.1 - first OpenAI API response in browser
+- v0.0.2 - fixed 4-agent Crew
+- v0.0.3 - configurable agents, roles and models
 
 ## Security
 

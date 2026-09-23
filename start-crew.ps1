@@ -24,15 +24,12 @@ if ([string]::IsNullOrWhiteSpace($KeyLine) -or $KeyLine -eq "OPENAI_API_KEY=") {
     Write-Host "Edit:"
     Write-Host "  $EnvFile"
     Write-Host ""
-    Write-Host "and set:"
-    Write-Host "  OPENAI_API_KEY=sk-..."
-    Write-Host ""
     Read-Host "Press Enter to close"
     exit 1
 }
 
 Write-Host ""
-Write-Host "CREW v0.0.1" -ForegroundColor Cyan
+Write-Host "CREW v0.0.2" -ForegroundColor Cyan
 Write-Host "http://127.0.0.1:8000"
 Write-Host "Ctrl+C to stop"
 Write-Host ""

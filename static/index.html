@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CREW v0.0.1</title>
+    <title>CREW v0.0.2</title>
     <style>
         :root {
             font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -12,36 +12,26 @@
             color: #e8eaf0;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             min-height: 100vh;
-            display: grid;
-            place-items: center;
             padding: 24px;
         }
 
         main {
-            width: min(820px, 100%);
+            width: min(980px, 100%);
+            margin: 0 auto;
             background: #191c23;
             border: 1px solid #2d323d;
             border-radius: 16px;
-            padding: 24px;
+            padding: 28px;
             box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
         }
 
-        h1 {
-            margin: 0 0 4px;
-            font-size: 28px;
-        }
-
-        .version {
-            color: #8f98a8;
-            margin-bottom: 20px;
-        }
+        h1 { margin: 0 0 4px; font-size: 30px; }
+        .version { color: #97a0b0; margin-bottom: 22px; }
 
         textarea {
             width: 100%;
@@ -56,14 +46,13 @@
             outline: none;
         }
 
-        textarea:focus {
-            border-color: #737f95;
-        }
+        textarea:focus { border-color: #737f95; }
 
         .actions {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             margin-top: 12px;
         }
 
@@ -78,90 +67,159 @@
             color: #15171c;
         }
 
+        button.secondary {
+            background: #343a46;
+            color: #e8eaf0;
+        }
+
         button:disabled {
             opacity: 0.5;
             cursor: wait;
         }
 
-        #status {
-            color: #8f98a8;
-        }
+        #status { color: #97a0b0; }
 
         #result {
-            margin-top: 22px;
-            padding-top: 18px;
+            margin-top: 24px;
+            padding-top: 20px;
             border-top: 1px solid #2d323d;
         }
 
-        #answer {
+        #final-answer {
             white-space: pre-wrap;
-            line-height: 1.5;
-            min-height: 40px;
+            line-height: 1.55;
+            padding: 16px;
+            background: #101218;
+            border: 1px solid #2d323d;
+            border-radius: 10px;
         }
 
-        #model {
-            margin-top: 12px;
-            color: #8f98a8;
+        #run-meta {
+            margin: 12px 0 18px;
             font-size: 13px;
+            color: #97a0b0;
         }
 
-        .error {
-            color: #ff9e9e;
+        #stages {
+            display: grid;
+            gap: 10px;
         }
+
+        details {
+            border: 1px solid #2d323d;
+            border-radius: 10px;
+            background: #14171d;
+            padding: 10px 12px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-family: inherit;
+            line-height: 1.45;
+            margin: 12px 0 4px;
+        }
+
+        .stage-meta {
+            color: #97a0b0;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .error { color: #ff9e9e; }
     </style>
 </head>
 <body>
 <main>
     <h1>CREW</h1>
-    <div class="version">v0.0.1 - one model, one request</div>
+    <div class="version">v0.0.2 - fixed four-agent crew</div>
 
-    <form id="chat-form">
-        <textarea
-            id="message"
-            placeholder="&#1042;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1079;&#1072;&#1087;&#1088;&#1086;&#1089;..."
-            required
-            autofocus
-        ></textarea>
+    <textarea
+        id="message"
+        placeholder="&#1042;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1079;&#1072;&#1076;&#1072;&#1095;&#1091;..."
+        autofocus
+    ></textarea>
 
-        <div class="actions">
-            <button id="send" type="submit">Send</button>
-            <span id="status">Ready</span>
-        </div>
-    </form>
+    <div class="actions">
+        <button id="run-crew" type="button">Run 4-agent Crew</button>
+        <button id="run-single" class="secondary" type="button">Run 1x Luna baseline</button>
+        <span id="status">Ready</span>
+    </div>
 
-    <section id="result">
-        <div id="answer">&#1054;&#1090;&#1074;&#1077;&#1090; &#1084;&#1086;&#1076;&#1077;&#1083;&#1080; &#1087;&#1086;&#1103;&#1074;&#1080;&#1090;&#1089;&#1103; &#1079;&#1076;&#1077;&#1089;&#1100;.</div>
-        <div id="model"></div>
+    <section id="result" hidden>
+        <h2>Final answer</h2>
+        <div id="final-answer"></div>
+        <div id="run-meta"></div>
+
+        <h2>Stages</h2>
+        <div id="stages"></div>
     </section>
 </main>
 
 <script>
-    const form = document.getElementById("chat-form");
     const message = document.getElementById("message");
-    const send = document.getElementById("send");
+    const runCrew = document.getElementById("run-crew");
+    const runSingle = document.getElementById("run-single");
     const status = document.getElementById("status");
-    const answer = document.getElementById("answer");
-    const model = document.getElementById("model");
+    const result = document.getElementById("result");
+    const finalAnswer = document.getElementById("final-answer");
+    const runMeta = document.getElementById("run-meta");
+    const stages = document.getElementById("stages");
 
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    function setBusy(busy) {
+        runCrew.disabled = busy;
+        runSingle.disabled = busy;
+    }
 
+    function renderStage(stage) {
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        const pre = document.createElement("pre");
+        const meta = document.createElement("div");
+
+        summary.textContent = `${stage.role} - DONE`;
+        pre.textContent = stage.text;
+        meta.className = "stage-meta";
+        meta.textContent = `${stage.model} | ${stage.latency_ms} ms`;
+
+        details.append(summary, pre, meta);
+        stages.appendChild(details);
+    }
+
+    async function run(mode) {
         const text = message.value.trim();
-        if (!text) return;
 
-        send.disabled = true;
-        status.textContent = "Calling OpenAI...";
-        answer.classList.remove("error");
-        answer.textContent = "";
-        model.textContent = "";
+        if (!text) {
+            status.textContent = "Enter a task first.";
+            return;
+        }
+
+        setBusy(true);
+        result.hidden = true;
+        stages.replaceChildren();
+        finalAnswer.classList.remove("error");
+        finalAnswer.textContent = "";
+
+        status.textContent =
+            mode === "crew"
+                ? "Running Solver -> Critic -> Improver -> Integrator..."
+                : "Running single-agent baseline...";
 
         try {
-            const response = await fetch("/api/chat", {
+            const response = await fetch("/api/run", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({
+                    message: text,
+                    mode: mode
+                })
             });
 
             const data = await response.json();
@@ -170,17 +228,29 @@
                 throw new Error(data.detail || `HTTP ${response.status}`);
             }
 
-            answer.textContent = data.answer;
-            model.textContent = `Model: ${data.model}`;
+            finalAnswer.textContent = data.final_answer;
+            runMeta.textContent =
+                `mode=${data.mode} | run=${data.run_id} | saved=${data.run_file}`;
+
+            for (const stage of data.stages) {
+                renderStage(stage);
+            }
+
+            result.hidden = false;
             status.textContent = "Done";
         } catch (error) {
-            answer.classList.add("error");
-            answer.textContent = error.message;
+            finalAnswer.classList.add("error");
+            finalAnswer.textContent = error.message;
+            runMeta.textContent = "";
+            result.hidden = false;
             status.textContent = "Failed";
         } finally {
-            send.disabled = false;
+            setBusy(false);
         }
-    });
+    }
+
+    runCrew.addEventListener("click", () => run("crew"));
+    runSingle.addEventListener("click", () => run("single"));
 </script>
 </body>
 </html>
