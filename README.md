@@ -4,28 +4,46 @@ Local experimental application for orchestrating multiple LLM agents.
 
 ## Current version
 
-CREW v0.0.2 - fixed four-agent Crew with comparison Test Mode and live stage progress.
+CREW v0.0.2 benchmark UI.
 
-## Models
-
-Default worker model:
+Current comparison:
 
 ```text
-gpt-5.6-luna
+4x GPT-5.6 Luna Crew
+vs
+1x GPT-5.6 Luna
 ```
 
-Default independent evaluator:
+Both solution branches start concurrently. The four-agent branch remains
+sequential internally:
 
 ```text
-gpt-5.6-sol
+Solver -> Critic -> Improver -> Integrator
 ```
 
-Optional local override in `.env`:
+The browser receives real stage progress from the backend.
+
+All large text sections are collapsible. UI metrics use seconds and ktok.
+
+## Cost accounting
+
+The run JSON stores raw token counts, calculated USD cost, and the pricing
+snapshot used for the calculation.
+
+Pricing snapshot date:
 
 ```text
-OPENAI_MODEL=gpt-5.6-luna
-OPENAI_EVALUATOR_MODEL=gpt-5.6-sol
+2026-09-23
 ```
+
+Standard short-context text pricing per 1M tokens:
+
+```text
+GPT-5.6 Luna: input 0.20 USD, cached input 0.02 USD, output 1.20 USD
+GPT-5.6 Sol:  input 4.00 USD, cached input 0.40 USD, output 20.00 USD
+```
+
+Long-context pricing is applied per call when input exceeds 272K tokens.
 
 ## Run
 
@@ -39,90 +57,17 @@ Open:
 http://127.0.0.1:8000
 ```
 
-## Test Mode
-
-One user task is solved by two independent branches:
-
-```text
-                         +-> Solver -> Critic -> Improver -> Integrator --+
-User task ---------------+                                                +-> Sol evaluator
-                         +-> 1x Luna baseline -----------------------------+
-```
-
-The 4x Luna branch and 1x Luna baseline run concurrently.
-
-The browser receives real progress events from the backend:
-
-```text
-4x Luna:
-Solver -> Critic -> Improver -> Integrator
-
-1x Luna:
-Single -> done
-
-Sol:
-waiting -> evaluating -> done
-```
-
-The progress bars reflect actual stage transitions, not estimated elapsed time.
-
-The Sol evaluator receives anonymous Candidate A and Candidate B in randomized
-order. It does not receive the internal Crew trace and is not told which
-candidate came from the four-agent workflow.
-
-## Evaluator output
-
-The evaluator produces:
-
-- a concise advocate case for each candidate;
-- a concise adversarial case against each candidate;
-- 0-10 scores for correctness, completeness, robustness, relevance, and
-  actionability;
-- A, B, or TIE preference;
-- confidence;
-- a short verdict.
-
-## Metrics
-
-The UI shows:
-
-- API call count;
-- input tokens;
-- output tokens;
-- reasoning tokens when reported by the API;
-- total tokens;
-- latency;
-- total Test Mode wall time.
-
 ## Run artifacts
 
-Each run is saved locally as UTF-8 JSON under:
-
-```text
-runs/
-```
-
+Each completed test is saved locally as UTF-8 JSON under `runs/`.
 `runs/` is ignored by Git.
-
-## Deliberate limitations
-
-v0.0.2 still does not have:
-
-- configurable roles;
-- configurable per-agent models in the UI;
-- parallel agents inside the four-agent Crew;
-- tools;
-- database storage;
-- long-term memory;
-- autonomous routing;
-- token-by-token response streaming.
 
 ## Roadmap
 
 - v0.0.0 - project skeleton
 - v0.0.1 - first OpenAI API response in browser
-- v0.0.2 - fixed 4-agent Crew + comparison Test Mode + live progress
-- v0.0.3 - configurable agents, roles and models
+- v0.0.2 - fixed Crew, comparison Test Mode, progress and benchmark metrics
+- v0.0.3 - configurable Panel A / Panel B and three-call Sol review
 
 ## Security
 

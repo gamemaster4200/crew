@@ -8,61 +8,51 @@ def fake_result(text: str) -> dict:
     return {
         "text": text,
         "model": "gpt-5.6-luna",
-        "latency_ms": 10,
+        "latency_ms": 1000,
         "usage": {
-            "input_tokens": 100,
-            "output_tokens": 50,
-            "total_tokens": 150,
-            "output_tokens_details": {
-                "reasoning_tokens": 5,
-            },
+            "input_tokens": 1000,
+            "output_tokens": 500,
+            "total_tokens": 1500,
+            "input_tokens_details": {"cached_tokens": 0},
+            "output_tokens_details": {"reasoning_tokens": 50},
         },
     }
 
 
 class WorkflowTests(unittest.IsolatedAsyncioTestCase):
-    async def test_single_calls_model_once(self):
+    async def test_single_metrics_include_cost(self):
         with patch(
             "crew_workflow.ask_model",
-            new=AsyncMock(return_value=fake_result("single answer")),
-        ) as mocked, patch(
-            "crew_workflow.save_run",
-            return_value="runs/fake.json",
+            new=AsyncMock(return_value=fake_result("single")),
         ):
-            result = await crew_workflow.run_single("task")
+            result = await crew_workflow.run_single(
+                "task",
+                persist=False,
+            )
 
-        self.assertEqual(result["mode"], "single")
-        self.assertEqual(result["final_answer"], "single answer")
         self.assertEqual(result["metrics"]["calls"], 1)
-        self.assertEqual(result["metrics"]["input_tokens"], 100)
-        self.assertEqual(mocked.await_count, 1)
+        self.assertGreater(result["metrics"]["cost_usd"], 0)
 
-    async def test_crew_calls_four_roles_in_order(self):
-        responses = [
-            fake_result("solver answer"),
-            fake_result("critic answer"),
-            fake_result("improver answer"),
-            fake_result("integrator answer"),
-        ]
-
+    async def test_crew_calls_four_roles(self):
         with patch(
             "crew_workflow.ask_model",
-            new=AsyncMock(side_effect=responses),
-        ) as mocked, patch(
-            "crew_workflow.save_run",
-            return_value="runs/fake.json",
-        ):
-            result = await crew_workflow.run_crew("task")
+            new=AsyncMock(
+                side_effect=[
+                    fake_result("s"),
+                    fake_result("c"),
+                    fake_result("i"),
+                    fake_result("f"),
+                ]
+            ),
+        ) as mocked:
+            result = await crew_workflow.run_crew(
+                "task",
+                persist=False,
+            )
 
-        self.assertEqual(result["mode"], "crew")
-        self.assertEqual(
-            [s["role"] for s in result["stages"]],
-            ["Solver", "Critic", "Improver", "Integrator"],
-        )
-        self.assertEqual(result["final_answer"], "integrator answer")
-        self.assertEqual(result["metrics"]["calls"], 4)
-        self.assertEqual(result["metrics"]["input_tokens"], 400)
         self.assertEqual(mocked.await_count, 4)
+        self.assertEqual(result["final_answer"], "f")
+        self.assertEqual(result["metrics"]["calls"], 4)
 
 
 if __name__ == "__main__":

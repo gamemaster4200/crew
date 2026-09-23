@@ -6,12 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from openai_client import ask_model
+from pricing import cost_for_call
 
 ROOT = Path(__file__).resolve().parent
 RUNS_DIR = ROOT / "runs"
 
 ROLES = ("Solver", "Critic", "Improver", "Integrator")
-
 ProgressCallback = Callable[[dict[str, Any]], Awaitable[None] | None]
 
 SOLVER_PROMPT = """\
@@ -102,12 +102,7 @@ CRITIC REVIEW:
 INTEGRATOR_PROMPT = """\
 You are the Integrator in a fixed four-agent CREW.
 
-You receive:
-- the original user task;
-- the Solver result;
-- the Critic review;
-- the Improver result.
-
+You receive the original task, Solver result, Critic review, and Improver result.
 Produce the final user-facing answer.
 
 Rules:
@@ -115,8 +110,8 @@ Rules:
 - Preserve the actual user requirements.
 - Do not invent facts to close gaps.
 - If an essential uncertainty remains, ask a focused clarification question.
-- Do not discuss the internal CREW process unless it is directly useful.
-- Return a clean final answer, not a review of the other agents.
+- Do not discuss the internal CREW process unless directly useful.
+- Return a clean final answer.
 
 USER TASK:
 <<<
@@ -140,8 +135,7 @@ IMPROVER RESULT:
 """
 
 SINGLE_PROMPT = """\
-You are a capable general assistant acting as the single-agent baseline for an
-experiment.
+You are a capable general assistant acting as the single-agent baseline.
 
 Solve the user task directly and accurately.
 Do not invent missing facts.
@@ -161,9 +155,7 @@ async def emit_progress(
 ) -> None:
     if progress is None:
         return
-
     result = progress(event)
-
     if inspect.isawaitable(result):
         await result
 
@@ -175,41 +167,46 @@ def new_run_id() -> str:
 def save_run(payload: dict[str, Any]) -> str:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     path = RUNS_DIR / f"{payload['run_id']}.json"
-
     path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
     return str(path.relative_to(ROOT))
 
 
-def summarize_stages(stages: list[dict[str, Any]]) -> dict[str, int]:
-    input_tokens = 0
-    output_tokens = 0
-    reasoning_tokens = 0
-    total_tokens = 0
-    latency_ms = 0
+def summarize_stages(stages: list[dict[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "calls": len(stages),
+        "latency_ms": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+        "total_tokens": 0,
+        "cost_usd": 0.0,
+        "cost_complete": True,
+    }
 
     for stage in stages:
-        latency_ms += int(stage.get("latency_ms", 0) or 0)
+        result["latency_ms"] += int(stage.get("latency_ms", 0) or 0)
         usage = stage.get("usage") or {}
 
-        input_tokens += int(usage.get("input_tokens", 0) or 0)
-        output_tokens += int(usage.get("output_tokens", 0) or 0)
-        total_tokens += int(usage.get("total_tokens", 0) or 0)
+        result["input_tokens"] += int(usage.get("input_tokens", 0) or 0)
+        result["output_tokens"] += int(usage.get("output_tokens", 0) or 0)
+        result["total_tokens"] += int(usage.get("total_tokens", 0) or 0)
 
         details = usage.get("output_tokens_details") or {}
-        reasoning_tokens += int(details.get("reasoning_tokens", 0) or 0)
+        result["reasoning_tokens"] += int(
+            details.get("reasoning_tokens", 0) or 0
+        )
 
-    return {
-        "calls": len(stages),
-        "latency_ms": latency_ms,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "reasoning_tokens": reasoning_tokens,
-        "total_tokens": total_tokens,
-    }
+        stage_cost = stage.get("cost_usd")
+        if stage_cost is None:
+            result["cost_complete"] = False
+        else:
+            result["cost_usd"] += float(stage_cost)
+
+    result["cost_usd"] = round(result["cost_usd"], 10)
+    return result
 
 
 async def _stage(
@@ -233,11 +230,11 @@ async def _stage(
     )
 
     result = await ask_model(prompt)
-
     stage = {
         "role": role,
         **result,
     }
+    stage["cost_usd"] = cost_for_call(stage["model"], stage.get("usage"))
 
     await emit_progress(
         progress,
@@ -250,7 +247,6 @@ async def _stage(
             "latency_ms": stage["latency_ms"],
         },
     )
-
     return stage
 
 
@@ -264,11 +260,7 @@ async def run_single(
 
     await emit_progress(
         progress,
-        {
-            "event": "branch_started",
-            "branch": "single",
-            "total": 1,
-        },
+        {"event": "branch_started", "branch": "single", "total": 1},
     )
 
     stage = await _stage(
@@ -279,7 +271,6 @@ async def run_single(
         total=1,
         progress=progress,
     )
-
     stages = [stage]
 
     payload = {
@@ -291,20 +282,12 @@ async def run_single(
         "final_answer": stage["text"],
     }
 
-    if persist:
-        payload["run_file"] = save_run(payload)
-    else:
-        payload["run_file"] = ""
+    payload["run_file"] = save_run(payload) if persist else ""
 
     await emit_progress(
         progress,
-        {
-            "event": "branch_done",
-            "branch": "single",
-            "result": payload,
-        },
+        {"event": "branch_done", "branch": "single", "result": payload},
     )
-
     return payload
 
 
@@ -318,11 +301,7 @@ async def run_crew(
 
     await emit_progress(
         progress,
-        {
-            "event": "branch_started",
-            "branch": "crew",
-            "total": 4,
-        },
+        {"event": "branch_started", "branch": "crew", "total": 4},
     )
 
     solver = await _stage(
@@ -333,19 +312,14 @@ async def run_crew(
         total=4,
         progress=progress,
     )
-
     critic = await _stage(
         "Critic",
-        CRITIC_PROMPT.format(
-            task=task,
-            solver=solver["text"],
-        ),
+        CRITIC_PROMPT.format(task=task, solver=solver["text"]),
         branch="crew",
         index=2,
         total=4,
         progress=progress,
     )
-
     improver = await _stage(
         "Improver",
         IMPROVER_PROMPT.format(
@@ -358,7 +332,6 @@ async def run_crew(
         total=4,
         progress=progress,
     )
-
     integrator = await _stage(
         "Integrator",
         INTEGRATOR_PROMPT.format(
@@ -374,7 +347,6 @@ async def run_crew(
     )
 
     stages = [solver, critic, improver, integrator]
-
     payload = {
         "run_id": run_id,
         "mode": "crew",
@@ -385,18 +357,10 @@ async def run_crew(
         "final_answer": integrator["text"],
     }
 
-    if persist:
-        payload["run_file"] = save_run(payload)
-    else:
-        payload["run_file"] = ""
+    payload["run_file"] = save_run(payload) if persist else ""
 
     await emit_progress(
         progress,
-        {
-            "event": "branch_done",
-            "branch": "crew",
-            "result": payload,
-        },
+        {"event": "branch_done", "branch": "crew", "result": payload},
     )
-
     return payload

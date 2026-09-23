@@ -13,7 +13,7 @@ from evaluator import run_test
 ROOT = Path(__file__).resolve().parent
 INDEX_HTML = ROOT / "static" / "index.html"
 
-app = FastAPI(title="CREW", version="0.0.2-test-progress")
+app = FastAPI(title="CREW", version="0.0.2-benchmark")
 
 
 class RunRequest(BaseModel):
@@ -32,34 +32,21 @@ async def index() -> FileResponse:
 
 @app.get("/api/health")
 async def health() -> dict[str, str]:
-    return {
-        "status": "ok",
-        "version": "0.0.2-test-progress",
-    }
+    return {"status": "ok", "version": "0.0.2-benchmark"}
 
 
 @app.post("/api/run")
 async def run(request: RunRequest) -> dict:
     message = request.message.strip()
-
     if not message:
-        raise HTTPException(
-            status_code=400,
-            detail="Message is empty.",
-        )
+        raise HTTPException(status_code=400, detail="Message is empty.")
 
     try:
         if request.mode == "single":
             return await run_single(message)
-
         return await run_crew(message)
-
     except RuntimeError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=str(exc),
-        ) from exc
-
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=502,
@@ -70,22 +57,12 @@ async def run(request: RunRequest) -> dict:
 @app.post("/api/test")
 async def test(request: TestRequest) -> dict:
     message = request.message.strip()
-
     if not message:
-        raise HTTPException(
-            status_code=400,
-            detail="Message is empty.",
-        )
-
+        raise HTTPException(status_code=400, detail="Message is empty.")
     try:
         return await run_test(message)
-
     except RuntimeError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=str(exc),
-        ) from exc
-
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=502,
@@ -96,67 +73,33 @@ async def test(request: TestRequest) -> dict:
 @app.post("/api/test-stream")
 async def test_stream(request: TestRequest) -> StreamingResponse:
     message = request.message.strip()
-
     if not message:
-        raise HTTPException(
-            status_code=400,
-            detail="Message is empty.",
-        )
+        raise HTTPException(status_code=400, detail="Message is empty.")
 
     async def stream():
         queue: asyncio.Queue[dict] = asyncio.Queue()
 
         async def progress(event: dict) -> None:
-            await queue.put(
-                {
-                    "type": "progress",
-                    **event,
-                }
-            )
+            await queue.put({"type": "progress", **event})
 
         async def runner() -> None:
             try:
-                result = await run_test(
-                    message,
-                    progress=progress,
-                )
-
-                await queue.put(
-                    {
-                        "type": "result",
-                        "data": result,
-                    }
-                )
-
+                result = await run_test(message, progress=progress)
+                await queue.put({"type": "result", "data": result})
             except Exception as exc:
-                await queue.put(
-                    {
-                        "type": "error",
-                        "message": str(exc),
-                    }
-                )
+                await queue.put({"type": "error", "message": str(exc)})
 
         task = asyncio.create_task(runner())
 
         try:
             while True:
                 event = await queue.get()
-
-                yield (
-                    json.dumps(
-                        event,
-                        ensure_ascii=False,
-                    )
-                    + "\n"
-                )
-
+                yield json.dumps(event, ensure_ascii=False) + "\n"
                 if event["type"] in {"result", "error"}:
                     break
-
         finally:
             if not task.done():
                 task.cancel()
-
                 try:
                     await task
                 except asyncio.CancelledError:
