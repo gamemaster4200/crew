@@ -77,6 +77,8 @@ Build the strongest concise case FOR EACH candidate.
 Do not choose a winner.
 Do not infer anything from length or style.
 Focus on correctness, completeness, robustness, relevance, and actionability.
+Inside each returned candidate field, do not call it A or B. Write only the
+substantive case; the UI already knows which panel that field belongs to.
 
 USER TASK:
 <<<
@@ -101,6 +103,8 @@ Build the strongest concise case AGAINST EACH candidate.
 Search aggressively for errors, omissions, unsupported assumptions, fragility,
 missed edge cases, irrelevant complexity, and violations of the user request.
 Do not choose a winner.
+Inside each returned candidate field, do not call it A or B. Write only the
+substantive case; the UI already knows which panel that field belongs to.
 
 USER TASK:
 <<<
@@ -137,6 +141,9 @@ Score EACH candidate 0-10 on:
 
 Choose A, B, or TIE.
 Give a verdict of at most 3 short sentences.
+In the verdict text, do not refer to the candidates as A or B and do not repeat
+the winner label. Explain only the substantive reason for the judgment. The UI
+will translate the blind winner to Panel A or Panel B separately.
 
 USER TASK:
 <<<
