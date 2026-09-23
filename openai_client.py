@@ -9,57 +9,45 @@ from openai import AsyncOpenAI
 load_dotenv()
 
 DEFAULT_MODEL = "gpt-5.6-luna"
-DEFAULT_EVALUATOR_MODEL = "gpt-5.6-sol"
-
-
-def get_model() -> str:
-    return os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
-
-
-def get_evaluator_model() -> str:
-    return (
-        os.getenv("OPENAI_EVALUATOR_MODEL", DEFAULT_EVALUATOR_MODEL).strip()
-        or DEFAULT_EVALUATOR_MODEL
-    )
+DEFAULT_REVIEWER_MODEL = "gpt-5.6-sol"
 
 
 def get_client() -> AsyncOpenAI:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
-
     if not api_key:
         raise RuntimeError(
             "OPENAI_API_KEY is missing. Put the CREW project API key into .env."
         )
-
     return AsyncOpenAI(api_key=api_key)
+
+
+def get_reviewer_model() -> str:
+    return (
+        os.getenv("OPENAI_EVALUATOR_MODEL", DEFAULT_REVIEWER_MODEL).strip()
+        or DEFAULT_REVIEWER_MODEL
+    )
 
 
 def _usage_to_dict(response: Any) -> dict[str, Any] | None:
     usage = getattr(response, "usage", None)
-
     if usage is None:
         return None
-
     if hasattr(usage, "model_dump"):
         return usage.model_dump()
-
     return None
 
 
 async def ask_model(
     prompt: str,
     *,
-    model: str | None = None,
+    model: str,
     reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
     client = get_client()
-    selected_model = model or get_model()
-
     request: dict[str, Any] = {
-        "model": selected_model,
+        "model": model,
         "input": prompt,
     }
-
     if reasoning_effort is not None:
         request["reasoning"] = {"effort": reasoning_effort}
 
@@ -68,13 +56,12 @@ async def ask_model(
     elapsed_ms = round((time.perf_counter() - started) * 1000)
 
     text = (response.output_text or "").strip()
-
     if not text:
         raise RuntimeError("OpenAI returned an empty text response.")
 
     return {
         "text": text,
-        "model": getattr(response, "model", selected_model),
+        "model": getattr(response, "model", model),
         "latency_ms": elapsed_ms,
         "usage": _usage_to_dict(response),
     }
@@ -107,15 +94,14 @@ async def ask_model_json(
     elapsed_ms = round((time.perf_counter() - started) * 1000)
 
     raw = (response.output_text or "").strip()
-
     if not raw:
-        raise RuntimeError("Evaluator returned an empty response.")
+        raise RuntimeError("OpenAI returned an empty structured response.")
 
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise RuntimeError(
-            f"Evaluator returned invalid JSON: {exc}"
+            f"OpenAI returned invalid structured JSON: {exc}"
         ) from exc
 
     return {

@@ -3,85 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CREW v0.0.2 Benchmark</title>
+<title>CREW v0.0.3</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;background:#0f1116;color:#edf0f6}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:22px}main{width:min(1500px,100%);margin:0 auto}
-.card{background:#191c23;border:1px solid #303641;border-radius:15px;padding:20px}
-header{margin-bottom:16px}h1{margin:0;font-size:30px}h2{margin:0 0 12px;font-size:20px}h3{margin:16px 0 8px;font-size:15px}
-.version,.meta{color:#99a3b4}.version{margin-top:4px}
-textarea{width:100%;min-height:130px;resize:vertical;padding:14px;border-radius:10px;border:1px solid #3a414e;background:#101218;color:inherit;font:inherit;outline:none}
-.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}button{border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;background:#edf0f6;color:#15171c}button.secondary{background:#343a46;color:#edf0f6}button:disabled{opacity:.5;cursor:wait}
-#status{color:#aab4c5}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:22px}main{width:min(1550px,100%);margin:0 auto}.card{background:#191c23;border:1px solid #303641;border-radius:15px;padding:20px}header{margin-bottom:16px}h1{margin:0;font-size:30px}h2{margin:0 0 12px;font-size:20px}h3{margin:16px 0 8px;font-size:15px}.version,.meta{color:#99a3b4}.version{margin-top:4px}
+textarea{width:100%;min-height:130px;resize:vertical;padding:14px;border-radius:10px;border:1px solid #3a414e;background:#101218;color:inherit;font:inherit;outline:none}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}button{border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;background:#edf0f6;color:#15171c}button:disabled{opacity:.5;cursor:wait}#status{color:#aab4c5}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}.config{display:grid;gap:8px;margin-bottom:14px}.agent-row{display:grid;grid-template-columns:42px minmax(120px,1fr) minmax(150px,1fr);gap:8px;align-items:center}.agent-num{color:#8f99aa;font-size:12px}select{width:100%;padding:8px;border-radius:8px;border:1px solid #3a414e;background:#101218;color:inherit;font:inherit}.count-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}.count-row select{width:auto}
 .progress-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:13px;color:#aeb8c8}.progress-track{height:10px;background:#101218;border:1px solid #303641;border-radius:999px;overflow:hidden}.progress-fill{width:0;height:100%;background:#c7ced9;transition:width 180ms ease}.progress-fill.active{background-image:linear-gradient(135deg,rgba(255,255,255,.18) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.18) 50%,rgba(255,255,255,.18) 75%,transparent 75%,transparent);background-size:18px 18px;animation:stripes 700ms linear infinite}@keyframes stripes{to{background-position:18px 0}}.stage-line{margin:7px 0 12px;font-size:12px;color:#8f99aa;min-height:18px}
-details.textbox{border:1px solid #303641;border-radius:10px;background:#11141a;margin-top:10px;overflow:hidden}details.textbox>summary{cursor:pointer;font-weight:700;padding:11px 13px;background:#151820}details.textbox>.body{padding:12px 13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
-.metrics{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.pill{border:1px solid #3a414e;border-radius:999px;padding:5px 9px;font-size:12px;color:#bdc6d5;background:#14171d}
-.score-grid{display:grid;grid-template-columns:minmax(120px,1fr) 80px 80px;gap:6px 12px;align-items:center;margin-top:14px;font-size:13px}.score-head{color:#9da7b7;font-weight:700}
-.verdict-main{font-size:18px;font-weight:800;margin-bottom:7px}.error{color:#ff9e9e}
+details.textbox{border:1px solid #303641;border-radius:10px;background:#11141a;margin-top:10px;overflow:hidden}details.textbox>summary{cursor:pointer;font-weight:700;padding:11px 13px;background:#151820}details.textbox>.body{padding:12px 13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.metrics{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.pill{border:1px solid #3a414e;border-radius:999px;padding:5px 9px;font-size:12px;color:#bdc6d5;background:#14171d}
+.score-grid{display:grid;grid-template-columns:minmax(120px,1fr) 80px 80px;gap:6px 12px;align-items:center;margin-top:14px;font-size:13px}.score-head{color:#9da7b7;font-weight:700}.verdict-main{font-size:18px;font-weight:800;margin-bottom:7px}
 @media(prefers-reduced-motion:reduce){.progress-fill{transition:none}.progress-fill.active{animation:none}}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.agent-row{grid-template-columns:35px 1fr}.agent-row select:last-child{grid-column:2}}
 </style>
 </head>
 <body>
 <main>
-<header><h1>CREW</h1><div class="version">v0.0.2 - benchmark UI</div></header>
+<header><h1>CREW</h1><div class="version">v0.0.3 - configurable panels + 3-call Sol review</div></header>
 
 <section class="card">
 <details class="textbox" open>
 <summary>User task</summary>
 <div class="body"><textarea id="message" placeholder="&#1042;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1079;&#1072;&#1076;&#1072;&#1095;&#1091;..." autofocus></textarea></div>
 </details>
-<div class="actions">
-<button id="run-test" type="button">Run comparison test</button>
-<button id="run-crew" class="secondary" type="button">4x Luna only</button>
-<button id="run-single" class="secondary" type="button">1x Luna only</button>
-<span id="status">Ready</span>
-</div>
+<div class="actions"><button id="run-test" type="button">Run comparison test</button><span id="status">Ready</span></div>
 </section>
 
-<section id="comparison" class="grid" hidden>
+<section class="grid">
 <article class="card">
-<h2>4x Luna Crew</h2>
-<div class="progress-head"><span id="crew-plabel">Waiting</span><span id="crew-pct">0%</span></div>
-<div class="progress-track"><div id="crew-pfill" class="progress-fill"></div></div>
-<div id="crew-stage-line" class="stage-line">Solver - Critic - Improver - Integrator</div>
-<div id="crew-metrics" class="metrics"></div>
-<details class="textbox" open><summary>Final answer</summary><div id="crew-answer" class="body">Waiting...</div></details>
-<div id="crew-stages"></div>
+<h2>Panel A</h2>
+<div class="count-row"><label for="a-count">Agents</label><select id="a-count"><option>1</option><option>2</option><option>3</option><option selected>4</option></select></div>
+<div id="a-config" class="config"></div>
+<div class="progress-head"><span id="a-plabel">Waiting</span><span id="a-pct">0%</span></div>
+<div class="progress-track"><div id="a-pfill" class="progress-fill"></div></div>
+<div id="a-stage-line" class="stage-line">Waiting</div>
+<div id="a-metrics" class="metrics"></div>
+<details class="textbox" open><summary>Final answer</summary><div id="a-answer" class="body">No run yet.</div></details>
+<div id="a-stages"></div>
 </article>
 
 <article class="card">
-<h2>1x Luna baseline</h2>
-<div class="progress-head"><span id="single-plabel">Waiting</span><span id="single-pct">0%</span></div>
-<div class="progress-track"><div id="single-pfill" class="progress-fill"></div></div>
-<div id="single-stage-line" class="stage-line">Single Luna</div>
-<div id="single-metrics" class="metrics"></div>
-<details class="textbox" open><summary>Final answer</summary><div id="single-answer" class="body">Waiting...</div></details>
-<div id="single-stages"></div>
+<h2>Panel B</h2>
+<div class="count-row"><label for="b-count">Agents</label><select id="b-count"><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
+<div id="b-config" class="config"></div>
+<div class="progress-head"><span id="b-plabel">Waiting</span><span id="b-pct">0%</span></div>
+<div class="progress-track"><div id="b-pfill" class="progress-fill"></div></div>
+<div id="b-stage-line" class="stage-line">Waiting</div>
+<div id="b-metrics" class="metrics"></div>
+<details class="textbox" open><summary>Final answer</summary><div id="b-answer" class="body">No run yet.</div></details>
+<div id="b-stages"></div>
 </article>
 </section>
 
-<section id="evaluator" class="card" style="margin-top:16px" hidden>
-<h2>Sol independent evaluator</h2>
-<div class="progress-head"><span id="eval-plabel">Waiting for both candidates</span><span id="eval-pct">0%</span></div>
-<div class="progress-track"><div id="eval-pfill" class="progress-fill"></div></div>
-<div id="eval-stage-line" class="stage-line">Blind A/B evaluation</div>
-<div id="eval-content" hidden>
-<div id="eval-meta" class="meta"></div>
+<section id="review-card" class="card" style="margin-top:16px">
+<h2>Sol review</h2>
+<div class="progress-head"><span id="r-plabel">Waiting for both panels</span><span id="r-pct">0%</span></div>
+<div class="progress-track"><div id="r-pfill" class="progress-fill"></div></div>
+<div id="r-stage-line" class="stage-line">Advocate + Adversary in parallel, then Judge</div>
+<div id="review-content" hidden>
+<div id="review-metrics" class="metrics"></div>
 <div class="grid">
 <div>
-<h3>4x Luna Crew</h3>
-<details class="textbox"><summary>Advocate</summary><div id="crew-advocate" class="body"></div></details>
-<details class="textbox"><summary>Adversary</summary><div id="crew-adversary" class="body"></div></details>
+<h3>Panel A</h3>
+<details class="textbox"><summary>Advocate</summary><div id="a-advocate" class="body"></div></details>
+<details class="textbox"><summary>Adversary</summary><div id="a-adversary" class="body"></div></details>
 </div>
 <div>
-<h3>1x Luna baseline</h3>
-<details class="textbox"><summary>Advocate</summary><div id="single-advocate" class="body"></div></details>
-<details class="textbox"><summary>Adversary</summary><div id="single-adversary" class="body"></div></details>
+<h3>Panel B</h3>
+<details class="textbox"><summary>Advocate</summary><div id="b-advocate" class="body"></div></details>
+<details class="textbox"><summary>Adversary</summary><div id="b-adversary" class="body"></div></details>
 </div>
 </div>
 <div id="score-grid" class="score-grid"></div>
-<details class="textbox" open><summary>Verdict</summary><div class="body"><div id="verdict-main" class="verdict-main"></div><div id="verdict-text"></div><div id="verdict-confidence" class="meta"></div></div></details>
+<details class="textbox" open><summary>Judge verdict</summary><div class="body"><div id="verdict-main" class="verdict-main"></div><div id="verdict-text"></div><div id="verdict-confidence" class="meta"></div></div></details>
 <div id="test-metrics" class="metrics"></div>
 </div>
 </section>
@@ -89,35 +82,51 @@ details.textbox{border:1px solid #303641;border-radius:10px;background:#11141a;m
 
 <script>
 const q=id=>document.getElementById(id);
-const message=q("message"),runTest=q("run-test"),runCrew=q("run-crew"),runSingle=q("run-single"),status=q("status");
-const comparison=q("comparison"),evaluator=q("evaluator"),evalContent=q("eval-content");
-const scoreNames=["correctness","completeness","robustness","relevance","actionability"];
-const p={
- crew:{label:q("crew-plabel"),pct:q("crew-pct"),fill:q("crew-pfill"),stage:q("crew-stage-line")},
- single:{label:q("single-plabel"),pct:q("single-pct"),fill:q("single-pfill"),stage:q("single-stage-line")},
- evaluator:{label:q("eval-plabel"),pct:q("eval-pct"),fill:q("eval-pfill"),stage:q("eval-stage-line")}
+const roles=["Solver","Critic","Improver","Integrator"];
+const models=[["gpt-5.6-luna","Luna"],["gpt-5.6-sol","Sol"]];
+const state={
+ a:[{role:"Solver",model:"gpt-5.6-luna"},{role:"Critic",model:"gpt-5.6-luna"},{role:"Improver",model:"gpt-5.6-luna"},{role:"Integrator",model:"gpt-5.6-luna"}],
+ b:[{role:"Solver",model:"gpt-5.6-luna"}]
 };
-function busy(v){runTest.disabled=v;runCrew.disabled=v;runSingle.disabled=v}
+const defaultRoles=["Solver","Critic","Improver","Integrator"];
+const scoreNames=["correctness","completeness","robustness","relevance","actionability"];
+const reviewerDone={advocate:false,adversary:false};
+
+function select(values,current,onchange){const s=document.createElement("select");for(const [value,label] of values){const o=document.createElement("option");o.value=value;o.textContent=label;o.selected=value===current;s.appendChild(o)}s.addEventListener("change",()=>onchange(s.value));return s}
+function renderConfig(side){const box=q(`${side}-config`);box.replaceChildren();state[side].forEach((agent,i)=>{const row=document.createElement("div");row.className="agent-row";const n=document.createElement("div");n.className="agent-num";n.textContent=`#${i+1}`;const rs=select(roles.map(x=>[x,x]),agent.role,v=>state[side][i].role=v);const ms=select(models,agent.model,v=>state[side][i].model=v);row.append(n,rs,ms);box.appendChild(row)})}
+function resizePanel(side,count){const arr=state[side];while(arr.length<count){const i=arr.length;arr.push({role:defaultRoles[i]||"Solver",model:"gpt-5.6-luna"})}if(arr.length>count)arr.splice(count);renderConfig(side)}
+q("a-count").addEventListener("change",e=>resizePanel("a",Number(e.target.value)));
+q("b-count").addEventListener("change",e=>resizePanel("b",Number(e.target.value)));
+renderConfig("a");renderConfig("b");
+
+function busy(v){q("run-test").disabled=v}
 function sec(ms){return `${(Number(ms||0)/1000).toFixed(1)} s`}
 function ktok(n){return `${(Number(n||0)/1000).toFixed(2)} ktok`}
 function usd(n){return n==null?"cost ?":`$${Number(n).toFixed(5)}`}
+function signedUsd(n){if(n==null)return"?";const x=Number(n);return `${x>=0?"+":""}$${x.toFixed(5)}`}
 function pill(t){const x=document.createElement("span");x.className="pill";x.textContent=t;return x}
-function setp(side,val,label,stage,active){const u=p[side],v=Math.max(0,Math.min(100,Math.round(val)));u.fill.style.width=`${v}%`;u.pct.textContent=`${v}%`;u.label.textContent=label;if(stage!==undefined)u.stage.textContent=stage;u.fill.classList.toggle("active",!!active)}
+function setp(side,val,label,stage,active){const v=Math.max(0,Math.min(100,Math.round(val)));q(`${side}-pfill`).style.width=`${v}%`;q(`${side}-pct`).textContent=`${v}%`;q(`${side}-plabel`).textContent=label;if(stage!==undefined)q(`${side}-stage-line`).textContent=stage;q(`${side}-pfill`).classList.toggle("active",!!active)}
 function metrics(target,m){target.replaceChildren(pill(`calls ${m.calls}`),pill(sec(m.latency_ms)),pill(`in ${ktok(m.input_tokens)}`),pill(`out ${ktok(m.output_tokens)}`),pill(`reason ${ktok(m.reasoning_tokens)}`),pill(`total ${ktok(m.total_tokens)}`),pill(`cost ${usd(m.cost_usd)}`))}
-function stages(target,items){target.replaceChildren();for(const s of items){const d=document.createElement("details");d.className="textbox";const sm=document.createElement("summary");sm.textContent=`${s.role} - ${s.model} - ${sec(s.latency_ms)} - ${usd(s.cost_usd)}`;const b=document.createElement("div");b.className="body";b.textContent=s.text;d.append(sm,b);target.appendChild(d)}}
-function branch(b,side){q(`${side}-answer`).textContent=b.final_answer;metrics(q(`${side}-metrics`),b.metrics);stages(q(`${side}-stages`),b.stages)}
-function scores(c,s){const g=q("score-grid");g.replaceChildren();const z=document.createElement("div"),a=document.createElement("div"),b=document.createElement("div");a.className=b.className="score-head";a.textContent="4x";b.textContent="1x";g.append(z,a,b);for(const n of scoreNames){const l=document.createElement("div"),x=document.createElement("div"),y=document.createElement("div");l.textContent=n;x.textContent=`${c.scores[n]}/10`;y.textContent=`${s.scores[n]}/10`;g.append(l,x,y)}}
-function evalRender(data){const e=data.evaluation,c=e.crew_view,s=e.single_view;evalContent.hidden=false;q("eval-meta").textContent=`${e.model} | blind A/B | ${sec(e.latency_ms)} | ${usd(e.metrics.cost_usd)}`;q("crew-advocate").textContent=c.advocate;q("crew-adversary").textContent=c.adversary;q("single-advocate").textContent=s.advocate;q("single-adversary").textContent=s.adversary;scores(c,s);q("verdict-main").textContent=`Preferred: ${e.preferred_label}`;q("verdict-text").textContent=e.verdict;q("verdict-confidence").textContent=`confidence=${e.confidence} | A=${e.blind_mapping.A}, B=${e.blind_mapping.B}`;
- const m=data.test_metrics,t=q("test-metrics"),delta=Number(m.solution_cost_delta_usd||0),ratio=m.solution_cost_ratio;
- t.replaceChildren(pill(`wall ${sec(m.total_wall_ms)}`),pill(`all ${ktok(m.total_tokens)}`),pill(`Crew ${usd(m.crew_cost_usd)}`),pill(`1x ${usd(m.single_cost_usd)}`),pill(`delta ${delta>=0?"+":""}${usd(delta)}`),pill(`ratio ${ratio==null?"?":Number(ratio).toFixed(2)+"x"}`),pill(`Sol ${usd(m.evaluator_cost_usd)}`),pill(`total ${usd(m.total_cost_usd)}`))
+function stages(target,items){target.replaceChildren();for(const s of items){const d=document.createElement("details");d.className="textbox";const sm=document.createElement("summary");sm.textContent=`#${s.index} ${s.role} - ${s.model} - ${sec(s.latency_ms)} - ${usd(s.cost_usd)}`;const b=document.createElement("div");b.className="body";b.textContent=s.text;d.append(sm,b);target.appendChild(d)}}
+function renderPanel(data,side){q(`${side}-answer`).textContent=data.final_answer;metrics(q(`${side}-metrics`),data.metrics);stages(q(`${side}-stages`),data.stages)}
+function renderScores(a,b){const g=q("score-grid");g.replaceChildren();const z=document.createElement("div"),ah=document.createElement("div"),bh=document.createElement("div");ah.className=bh.className="score-head";ah.textContent="A";bh.textContent="B";g.append(z,ah,bh);for(const name of scoreNames){const l=document.createElement("div"),x=document.createElement("div"),y=document.createElement("div");l.textContent=name;x.textContent=`${a.scores[name]}/10`;y.textContent=`${b.scores[name]}/10`;g.append(l,x,y)}}
+function renderReview(data){const r=data.review,a=r.panel_a_view,b=r.panel_b_view;q("review-content").hidden=false;metrics(q("review-metrics"),r.metrics);q("a-advocate").textContent=a.advocate;q("a-adversary").textContent=a.adversary;q("b-advocate").textContent=b.advocate;q("b-adversary").textContent=b.adversary;renderScores(a,b);const label=r.preferred_side==="panel_a"?"Panel A":r.preferred_side==="panel_b"?"Panel B":"TIE";q("verdict-main").textContent=`Preferred: ${label}`;q("verdict-text").textContent=r.verdict;q("verdict-confidence").textContent=`confidence=${r.confidence} | blind=${r.preferred_blind} | A=${r.blind_mapping.A}, B=${r.blind_mapping.B}`;
+ const m=data.test_metrics,t=q("test-metrics");t.replaceChildren(pill(`wall ${sec(m.total_wall_ms)}`),pill(`all ${ktok(m.total_tokens)}`),pill(`A ${usd(m.panel_a_cost_usd)}`),pill(`B ${usd(m.panel_b_cost_usd)}`),pill(`A-B ${signedUsd(m.solution_cost_delta_usd)}`),pill(`A/B ${m.solution_cost_ratio==null?"?":Number(m.solution_cost_ratio).toFixed(2)+"x"}`),pill(`review ${usd(m.review_cost_usd)}`),pill(`total ${usd(m.total_cost_usd)}`))}
+function progress(e){
+ if(e.event==="panel_started"){setp(e.panel,2,"Started","Preparing",true);return}
+ if(e.event==="stage_started"){setp(e.panel,((e.index-1)/e.total)*100+Math.min(8,100/e.total/3),`${e.role} running`,`${e.index}/${e.total} - ${e.role} - ${e.model}`,true);return}
+ if(e.event==="stage_done"){setp(e.panel,(e.index/e.total)*100,`${e.role} done`,`${e.index}/${e.total} complete`,false);return}
+ if(e.event==="panel_done"){setp(e.panel,100,"Done","Candidate ready",false);renderPanel(e.result,e.panel);return}
+ if(e.event==="review_started"){reviewerDone.advocate=false;reviewerDone.adversary=false;setp("r",5,"Review started","Advocate + Adversary starting",true);return}
+ if(e.event==="reviewer_started"){setp("r",15,`${e.reviewer} running`,"Advocate + Adversary running",true);return}
+ if(e.event==="reviewer_done"){reviewerDone[e.reviewer]=true;const both=reviewerDone.advocate&&reviewerDone.adversary;setp("r",both?55:35,both?"Both poles done":`${e.reviewer} done`,both?"Preparing Judge":"Other pole still running",!both);return}
+ if(e.event==="judge_started"){setp("r",65,"Judge running","Final Sol judgment",true);return}
+ if(e.event==="judge_done"){setp("r",100,"Judge done",`${e.model} | ${sec(e.latency_ms)}`,false);return}
 }
-function progress(e){if(e.event==="branch_started"){setp(e.branch,2,"Started","Preparing",true);return}if(e.event==="stage_started"){setp(e.branch,((e.index-1)/e.total)*100+Math.min(8,100/e.total/3),`${e.role} running`,`${e.index}/${e.total} - ${e.role}`,true);return}if(e.event==="stage_done"){setp(e.branch,(e.index/e.total)*100,`${e.role} done`,`${e.index}/${e.total} complete`,false);return}if(e.event==="branch_done"){setp(e.branch,100,"Done","Candidate ready",false);branch(e.result,e.branch);return}if(e.event==="evaluator_started"){setp("evaluator",12,"Sol evaluating",`Model: ${e.model}`,true);return}if(e.event==="evaluator_done"){setp("evaluator",100,"Done",`${e.model} | ${sec(e.latency_ms)}`,false)}}
-async function jsonReq(url,body){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw new Error(d.detail||`HTTP ${r.status}`);return d}
 async function ndjson(r,onEvent){if(!r.body)throw new Error("Streaming response unavailable.");const reader=r.body.getReader(),dec=new TextDecoder("utf-8");let buf="";while(true){const {value,done}=await reader.read();buf+=done?dec.decode():dec.decode(value,{stream:true});let i;while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(line)onEvent(JSON.parse(line))}if(done)break}if(buf.trim())onEvent(JSON.parse(buf.trim()))}
-function prep(){comparison.hidden=false;evaluator.hidden=false;evalContent.hidden=true;q("crew-answer").textContent="Waiting...";q("single-answer").textContent="Waiting...";q("crew-metrics").replaceChildren();q("single-metrics").replaceChildren();q("crew-stages").replaceChildren();q("single-stages").replaceChildren();setp("crew",0,"Waiting","Solver - Critic - Improver - Integrator",false);setp("single",0,"Waiting","Single Luna",false);setp("evaluator",0,"Waiting for both candidates","Blind A/B evaluation",false)}
-async function compare(){const text=message.value.trim();if(!text){status.textContent="Enter a task first.";return}busy(true);prep();status.textContent="Running comparison...";let finalData=null;try{const r=await fetch("/api/test-stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text})});if(!r.ok){const d=await r.json();throw new Error(d.detail||`HTTP ${r.status}`)}await ndjson(r,e=>{if(e.type==="progress")progress(e);else if(e.type==="result")finalData=e.data;else if(e.type==="error")throw new Error(e.message)});if(!finalData)throw new Error("No final result.");branch(finalData.crew,"crew");branch(finalData.single,"single");evalRender(finalData);status.textContent="Done"}catch(e){status.textContent=`Failed: ${e.message}`}finally{busy(false)}}
-async function only(mode){const text=message.value.trim();if(!text){status.textContent="Enter a task first.";return}busy(true);comparison.hidden=false;evaluator.hidden=true;status.textContent=`Running ${mode}...`;try{const d=await jsonReq("/api/run",{message:text,mode});branch(d,mode);status.textContent="Done"}catch(e){status.textContent=`Failed: ${e.message}`}finally{busy(false)}}
-runTest.addEventListener("click",compare);runCrew.addEventListener("click",()=>only("crew"));runSingle.addEventListener("click",()=>only("single"));
+function prep(){q("review-content").hidden=true;q("a-answer").textContent="Running...";q("b-answer").textContent="Running...";q("a-metrics").replaceChildren();q("b-metrics").replaceChildren();q("a-stages").replaceChildren();q("b-stages").replaceChildren();setp("a",0,"Waiting","Panel A queued",false);setp("b",0,"Waiting","Panel B queued",false);setp("r",0,"Waiting for both panels","Advocate + Adversary in parallel, then Judge",false)}
+async function run(){const text=q("message").value.trim();if(!text){q("status").textContent="Enter a task first.";return}busy(true);prep();q("status").textContent="Running configurable comparison...";let finalData=null;try{const body={message:text,panel_a:{agents:state.a},panel_b:{agents:state.b}};const r=await fetch("/api/test-stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();throw new Error(d.detail||`HTTP ${r.status}`)}await ndjson(r,e=>{if(e.type==="progress")progress(e);else if(e.type==="result")finalData=e.data;else if(e.type==="error")throw new Error(e.message)});if(!finalData)throw new Error("No final result.");renderPanel(finalData.panel_a,"a");renderPanel(finalData.panel_b,"b");renderReview(finalData);setp("r",100,"Done","Three-call Sol review complete",false);q("status").textContent="Done"}catch(e){q("status").textContent=`Failed: ${e.message}`}finally{busy(false)}}
+q("run-test").addEventListener("click",run);
 </script>
 </body>
 </html>

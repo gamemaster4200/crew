@@ -10,7 +10,6 @@ Set-Location -LiteralPath $Root
 if (-not (Test-Path -LiteralPath $Python)) {
     throw "Virtual environment not found: $Python"
 }
-
 if (-not (Test-Path -LiteralPath $EnvFile)) {
     throw ".env not found: $EnvFile"
 }
@@ -26,23 +25,18 @@ if (
     [string]::IsNullOrWhiteSpace($KeyLine) -or
     $KeyLine -eq "OPENAI_API_KEY="
 ) {
-    Write-Host ""
     Write-Host "OPENAI_API_KEY is empty." -ForegroundColor Yellow
-    Write-Host "Edit:"
-    Write-Host "  $EnvFile"
-    Write-Host ""
     Read-Host "Press Enter to close"
     exit 1
 }
 
 Write-Host ""
-Write-Host "CREW v0.0.2 Test Mode" -ForegroundColor Cyan
-Write-Host "Luna: gpt-5.6-luna"
-Write-Host "Evaluator default: gpt-5.6-sol"
+Write-Host "CREW v0.0.3" -ForegroundColor Cyan
+Write-Host "Configurable Panel A / Panel B"
+Write-Host "Three-call blind Sol review"
 Write-Host "http://127.0.0.1:8000"
 Write-Host "Ctrl+C to stop"
 Write-Host ""
 
 Start-Process "http://127.0.0.1:8000"
-
 & $Python -m uvicorn app:app --host 127.0.0.1 --port 8000

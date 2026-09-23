@@ -45,7 +45,6 @@ MODEL_PRICING_USD_PER_MTOK = {
 
 def _canonical_model(model: str) -> str:
     model = model.strip()
-
     if model in MODEL_PRICING_USD_PER_MTOK:
         return model
 
@@ -70,12 +69,11 @@ def cost_for_call(
     model: str,
     usage: dict[str, Any] | None,
 ) -> float | None:
-    if not usage:
-        return 0.0
+    if usage is None:
+        return None
 
     canonical = _canonical_model(model)
     pricing = MODEL_PRICING_USD_PER_MTOK.get(canonical)
-
     if pricing is None:
         return None
 

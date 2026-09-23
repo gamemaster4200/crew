@@ -1,54 +1,42 @@
 import unittest
 from unittest.mock import AsyncMock, patch
 
-import crew_workflow
-
-
-def fake_result(text: str) -> dict:
-    return {
-        "text": text,
-        "model": "gpt-5.6-luna",
-        "latency_ms": 10,
-        "usage": {
-            "input_tokens": 10,
-            "output_tokens": 5,
-            "total_tokens": 15,
-        },
-    }
+import panel_engine
 
 
 class ProgressTests(unittest.IsolatedAsyncioTestCase):
-    async def test_crew_emits_real_stage_events(self):
+    async def test_panel_progress_sequence(self):
         events = []
 
         async def progress(event):
             events.append(event.copy())
 
+        response = {
+            "text": "answer",
+            "model": "gpt-5.6-luna",
+            "latency_ms": 10,
+            "usage": None,
+        }
+
         with patch(
-            "crew_workflow.ask_model",
-            new=AsyncMock(
-                side_effect=[
-                    fake_result("s"),
-                    fake_result("c"),
-                    fake_result("i"),
-                    fake_result("f"),
-                ]
-            ),
+            "panel_engine.ask_model",
+            new=AsyncMock(return_value=response),
         ):
-            await crew_workflow.run_crew(
+            await panel_engine.run_panel(
                 "task",
-                persist=False,
+                "b",
+                [{"role": "Solver", "model": "gpt-5.6-luna"}],
                 progress=progress,
             )
 
-        started = [
-            e["role"]
-            for e in events
-            if e["event"] == "stage_started"
-        ]
         self.assertEqual(
-            started,
-            ["Solver", "Critic", "Improver", "Integrator"],
+            [e["event"] for e in events],
+            [
+                "panel_started",
+                "stage_started",
+                "stage_done",
+                "panel_done",
+            ],
         )
 
 

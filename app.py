@@ -7,22 +7,31 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from crew_workflow import run_crew, run_single
-from evaluator import run_test
+from panel_engine import SUPPORTED_MODELS, SUPPORTED_ROLES
+from reviewer import run_comparison
 
 ROOT = Path(__file__).resolve().parent
 INDEX_HTML = ROOT / "static" / "index.html"
 
-app = FastAPI(title="CREW", version="0.0.2-benchmark")
+Role = Literal["Solver", "Critic", "Improver", "Integrator"]
+Model = Literal["gpt-5.6-luna", "gpt-5.6-sol"]
+
+app = FastAPI(title="CREW", version="0.0.3")
 
 
-class RunRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=20_000)
-    mode: Literal["crew", "single"] = "crew"
+class AgentConfig(BaseModel):
+    role: Role
+    model: Model
+
+
+class PanelConfig(BaseModel):
+    agents: list[AgentConfig] = Field(min_length=1, max_length=4)
 
 
 class TestRequest(BaseModel):
     message: str = Field(min_length=1, max_length=20_000)
+    panel_a: PanelConfig
+    panel_b: PanelConfig
 
 
 @app.get("/")
@@ -31,27 +40,13 @@ async def index() -> FileResponse:
 
 
 @app.get("/api/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok", "version": "0.0.2-benchmark"}
-
-
-@app.post("/api/run")
-async def run(request: RunRequest) -> dict:
-    message = request.message.strip()
-    if not message:
-        raise HTTPException(status_code=400, detail="Message is empty.")
-
-    try:
-        if request.mode == "single":
-            return await run_single(message)
-        return await run_crew(message)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"CREW run failed: {exc}",
-        ) from exc
+async def health() -> dict:
+    return {
+        "status": "ok",
+        "version": "0.0.3",
+        "roles": list(SUPPORTED_ROLES),
+        "models": list(SUPPORTED_MODELS),
+    }
 
 
 @app.post("/api/test")
@@ -59,14 +54,19 @@ async def test(request: TestRequest) -> dict:
     message = request.message.strip()
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
+
     try:
-        return await run_test(message)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return await run_comparison(
+            message,
+            [agent.model_dump() for agent in request.panel_a.agents],
+            [agent.model_dump() for agent in request.panel_b.agents],
+        )
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=502,
-            detail=f"CREW test failed: {exc}",
+            detail=f"CREW comparison failed: {exc}",
         ) from exc
 
 
@@ -76,6 +76,9 @@ async def test_stream(request: TestRequest) -> StreamingResponse:
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
 
+    panel_a = [agent.model_dump() for agent in request.panel_a.agents]
+    panel_b = [agent.model_dump() for agent in request.panel_b.agents]
+
     async def stream():
         queue: asyncio.Queue[dict] = asyncio.Queue()
 
@@ -84,7 +87,12 @@ async def test_stream(request: TestRequest) -> StreamingResponse:
 
         async def runner() -> None:
             try:
-                result = await run_test(message, progress=progress)
+                result = await run_comparison(
+                    message,
+                    panel_a,
+                    panel_b,
+                    progress=progress,
+                )
                 await queue.put({"type": "result", "data": result})
             except Exception as exc:
                 await queue.put({"type": "error", "message": str(exc)})
